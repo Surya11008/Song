@@ -1227,6 +1227,33 @@
       }, [evaluatorsList, evaluatorSearch]);
 
       // Calendar Calculations and Handlers
+      // Timezone-safe local date string (YYYY-MM-DD)
+      const getLocalDateStr = (val) => {
+        if (!val) return '';
+        try {
+          const d = new Date(val);
+          if (isNaN(d.getTime())) return typeof val === 'string' ? val.slice(0, 10) : '';
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          return `${y}-${m}-${day}`;
+        } catch {
+          return typeof val === 'string' ? val.slice(0, 10) : '';
+        }
+      };
+
+      const handleEditCalEvent = (ev) => {
+        setCalEditingEventId(ev.id);
+        setCalEventDate(ev.date);
+        setCalEventTitle(ev.title);
+        setCalEventName(ev.name || '');
+        setCalEventZion(ev.zion || 'Nellore');
+        setCalEventBranch(ev.branch || 'Main Branch');
+        setCalEventTime(ev.time || '18:00');
+        setCalEventNotes(ev.notes || '');
+        setCalModalOpen(true);
+      };
+
       const calMonthYearLabel = useMemo(() => {
         return calCurrentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       }, [calCurrentDate]);
@@ -1306,7 +1333,7 @@
           if (calFilterZion !== 'ALL' && item.zion !== calFilterZion) return;
           if (calFilterEvaluator !== 'ALL' && item.evaluator !== calFilterEvaluator) return;
 
-          const dateStr = (item.createdAt || '').slice(0, 10);
+          const dateStr = getLocalDateStr(item.createdAt || item.updatedAt);
           if (!dateStr) return;
           if (!map[dateStr]) map[dateStr] = [];
           map[dateStr].push(item);
@@ -1341,12 +1368,12 @@
       // Month stats
       const calMonthStats = useMemo(() => {
         const currentPrefix = `${calCurrentDate.getFullYear()}-${String(calCurrentDate.getMonth() + 1).padStart(2, '0')}`;
-        const evalsThisMonth = evaluations.filter((e) => (e.createdAt || '').startsWith(currentPrefix));
+        const evalsThisMonth = evaluations.filter((e) => getLocalDateStr(e.createdAt || e.updatedAt).startsWith(currentPrefix));
         const eventsThisMonth = calendarEvents.filter((ev) => (ev.date || '').startsWith(currentPrefix));
         const avgScore = evalsThisMonth.length > 0
           ? (evalsThisMonth.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0) / evalsThisMonth.length).toFixed(1)
           : null;
-        const activeDaysCount = new Set(evalsThisMonth.map((e) => (e.createdAt || '').slice(0, 10))).size;
+        const activeDaysCount = new Set(evalsThisMonth.map((e) => getLocalDateStr(e.createdAt || e.updatedAt))).size;
 
         return {
           evalCount: evalsThisMonth.length,
@@ -3419,6 +3446,535 @@
                 )}
               </div>
             )}
+
+            {/* VIEW 4: CALENDAR TRACKER */}
+            {activeView === 'calendar' && (
+              <div className="space-y-5">
+                {/* Top Summary Banner */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-1.5">
+                        <Icons.Calendar className="w-3.5 h-3.5" />
+                        Choir Calendar &amp; Activity Tracker
+                      </span>
+                      <h2 className="text-xl font-extrabold text-slate-900">
+                        Dates, Schedules &amp; Evaluation Timeline
+                      </h2>
+                      <p className="text-xs sm:text-sm text-slate-500">
+                        Track daily choir grading sessions, practice schedules, rehearsals, and upcoming choir events.
+                      </p>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAddEventModal(calSelectedDateStr)}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold shadow-xs transition-all"
+                      >
+                        <Icons.Plus className="w-4 h-4" />
+                        <span>Schedule Choir Event</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Monthly Stats Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                        Month Evaluations
+                      </div>
+                      <div className="text-xl font-extrabold text-indigo-600 mt-0.5">
+                        {calMonthStats.evalCount}
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                        Scheduled Events
+                      </div>
+                      <div className="text-xl font-extrabold text-emerald-600 mt-0.5">
+                        {calMonthStats.eventCount}
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                        Active Days
+                      </div>
+                      <div className="text-xl font-extrabold text-amber-600 mt-0.5">
+                        {calMonthStats.activeDaysCount}
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+                        Month Avg Score
+                      </div>
+                      <div className="text-xl font-extrabold text-slate-800 mt-0.5">
+                        {calMonthStats.avgScore ? `${calMonthStats.avgScore} / 100` : '—'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calendar Control Toolbar */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  {/* Month Navigation */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={calPrevMonth}
+                      className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all"
+                      title="Previous Month"
+                    >
+                      <Icons.ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <span className="text-base sm:text-lg font-black text-slate-900 min-w-[170px] text-center">
+                      {calMonthYearLabel}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={calNextMonth}
+                      className="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-all"
+                      title="Next Month"
+                    >
+                      <Icons.ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={calJumpToday}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 ml-1 transition-all"
+                    >
+                      Today
+                    </button>
+                  </div>
+
+                  {/* Filter Options & View Mode Toggle */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Zion Filter */}
+                    <select
+                      value={calFilterZion}
+                      onChange={(e) => setCalFilterZion(e.target.value)}
+                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="ALL">All Zions</option>
+                      {zionsList.map((z) => (
+                        <option key={z} value={z}>{z}</option>
+                      ))}
+                    </select>
+
+                    {/* Choir Filter */}
+                    <select
+                      value={calFilterName}
+                      onChange={(e) => setCalFilterName(e.target.value)}
+                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="ALL">All Choirs</option>
+                      {namesList.map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+
+                    {/* Evaluator Filter */}
+                    <select
+                      value={calFilterEvaluator}
+                      onChange={(e) => setCalFilterEvaluator(e.target.value)}
+                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="ALL">All Evaluators</option>
+                      {evaluatorsList.map((ev) => (
+                        <option key={ev} value={ev}>{ev}</option>
+                      ))}
+                    </select>
+
+                    {/* View Mode Switcher */}
+                    <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200 ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => setCalViewMode('month')}
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                          calViewMode === 'month'
+                            ? 'bg-white text-indigo-700 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Month
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalViewMode('agenda')}
+                        className={`px-2.5 py-1 rounded text-xs font-bold transition-all ${
+                          calViewMode === 'agenda'
+                            ? 'bg-white text-indigo-700 shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        Timeline
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* View 4A: MONTH GRID */}
+                {calViewMode === 'month' && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-3 sm:p-5">
+                    {/* Days of week header */}
+                    <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-500 pb-2 border-b border-slate-100">
+                      <div className="text-rose-500">Sun</div>
+                      <div>Mon</div>
+                      <div>Tue</div>
+                      <div>Wed</div>
+                      <div>Thu</div>
+                      <div>Fri</div>
+                      <div className="text-indigo-600">Sat</div>
+                    </div>
+
+                    {/* Calendar days grid */}
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 mt-2">
+                      {calMonthCells.map((cell, idx) => {
+                        const evalsOnDay = calEvaluationsByDate[cell.dateStr] || [];
+                        const eventsOnDay = calEventsByDate[cell.dateStr] || [];
+                        const isSelected = cell.dateStr === calSelectedDateStr;
+                        const hasActivity = evalsOnDay.length > 0 || eventsOnDay.length > 0;
+
+                        const dayAvg = evalsOnDay.length > 0
+                          ? (evalsOnDay.reduce((a, b) => a + (Number(b.total) || 0), 0) / evalsOnDay.length).toFixed(0)
+                          : null;
+
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => setCalSelectedDateStr(cell.dateStr)}
+                            className={`min-h-[72px] sm:min-h-[96px] p-1.5 sm:p-2 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+                              !cell.isCurrentMonth
+                                ? 'bg-slate-50/60 border-slate-100 text-slate-400 opacity-60'
+                                : isSelected
+                                ? 'bg-indigo-50/70 border-indigo-400 ring-2 ring-indigo-400/40'
+                                : cell.isToday
+                                ? 'bg-blue-50/40 border-blue-300 ring-1 ring-blue-300'
+                                : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/80'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span
+                                className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${
+                                  cell.isToday
+                                    ? 'bg-blue-600 text-white font-extrabold'
+                                    : isSelected
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-slate-700'
+                                }`}
+                              >
+                                {cell.dayNumber}
+                              </span>
+                              {hasActivity && (
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 sm:hidden"></span>
+                              )}
+                            </div>
+
+                            {/* Day Activity Pills */}
+                            <div className="space-y-1 mt-1 hidden sm:block">
+                              {evalsOnDay.length > 0 && (
+                                <div className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 truncate flex items-center justify-between">
+                                  <span>{evalsOnDay.length} Graded</span>
+                                  {dayAvg && <span className="opacity-75">{dayAvg}m</span>}
+                                </div>
+                              )}
+                              {eventsOnDay.length > 0 && (
+                                <div className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 truncate">
+                                  {eventsOnDay.length} Event{eventsOnDay.length > 1 ? 's' : ''}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* View 4B: TIMELINE / AGENDA VIEW */}
+                {calViewMode === 'agenda' && (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <Icons.Clock className="w-4 h-4 text-indigo-600" />
+                      Chronological Activity Timeline
+                    </h3>
+
+                    {calAgendaDates.length === 0 ? (
+                      <div className="text-center py-10 text-slate-400">
+                        <Icons.Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm font-semibold">No recorded evaluations or scheduled events match your filter.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {calAgendaDates.map((dateStr) => {
+                          const evals = calEvaluationsByDate[dateStr] || [];
+                          const events = calEventsByDate[dateStr] || [];
+                          return (
+                            <div key={dateStr} className="border border-slate-200 rounded-xl p-4 bg-slate-50/50 space-y-3">
+                              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                                <span className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                                  <Icons.Calendar className="w-4 h-4 text-indigo-600" />
+                                  {formatDisplayDate(dateStr)}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  {evals.length > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">
+                                      {evals.length} Graded
+                                    </span>
+                                  )}
+                                  {events.length > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                      {events.length} Events
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCalSelectedDateStr(dateStr);
+                                      setCalViewMode('month');
+                                    }}
+                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline ml-2"
+                                  >
+                                    Inspect Date
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* List of items on this date */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {evals.map((entry) => (
+                                  <div key={entry.id} className="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1">
+                                    <div className="flex items-center justify-between font-bold">
+                                      <span className="text-slate-900 truncate">{entry.name}</span>
+                                      <span className="text-indigo-600 font-extrabold">{entry.total}/100 ({entry.grade})</span>
+                                    </div>
+                                    <div className="text-slate-500 flex items-center justify-between">
+                                      <span>Evaluator: {entry.evaluator}</span>
+                                      <span>Song #{entry.songNumber}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                                {events.map((ev) => (
+                                  <div key={ev.id} className="bg-white p-3 rounded-lg border border-emerald-200 text-xs space-y-1">
+                                    <div className="flex items-center justify-between font-bold">
+                                      <span className="text-emerald-800 truncate">{ev.title}</span>
+                                      <span className="text-slate-500">{ev.time || 'All Day'}</span>
+                                    </div>
+                                    <div className="text-slate-500">
+                                      {ev.name && <span>{ev.name} • </span>}
+                                      {ev.zion && <span>{ev.zion}</span>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Detail Sheet for Selected Date */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
+                        Selected Date Details
+                      </span>
+                      <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2 mt-0.5">
+                        <Icons.Calendar className="w-5 h-5 text-indigo-600" />
+                        {formatDisplayDate(calSelectedDateStr)}
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveView('workspace');
+                          showToast('Opened Grading Form. Select an Evaluator to begin.');
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all"
+                      >
+                        <Icons.ClipboardCheck className="w-4 h-4 text-indigo-600" />
+                        <span>Grade a Song</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAddEventModal(calSelectedDateStr)}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold transition-all"
+                      >
+                        <Icons.Plus className="w-4 h-4" />
+                        <span>Add Rehearsal / Event</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                    {/* Left Column: Evaluations on this Date */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                          <Icons.Award className="w-4 h-4 text-amber-500" />
+                          Choir Evaluations on this Date
+                          <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                            {calSelectedDateEvals.length}
+                          </span>
+                        </h4>
+                      </div>
+
+                      {calSelectedDateEvals.length === 0 ? (
+                        <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-400">
+                          <p className="text-xs font-medium">No choir evaluations recorded on this date.</p>
+                          <button
+                            type="button"
+                            onClick={() => setActiveView('evaluators')}
+                            className="mt-2 text-xs font-bold text-indigo-600 hover:underline"
+                          >
+                            Go to Evaluators to start grading &rarr;
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                          {calSelectedDateEvals.map((entry) => (
+                            <div
+                              key={entry.id}
+                              className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition-all space-y-2"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-extrabold text-sm text-slate-900">{entry.name}</div>
+                                  <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                                    <span>Song #{entry.songNumber}</span>
+                                    <span>•</span>
+                                    <span>{entry.zion} ({entry.branch})</span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-base font-black text-indigo-700">{entry.total}/100</div>
+                                  <div className="text-[11px] font-bold text-emerald-600">{entry.grade}</div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-xs">
+                                <span className="text-slate-500 font-medium">Evaluator: {entry.evaluator}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleJumpToGrading(entry)}
+                                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                                >
+                                  Open in Grading &rarr;
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column: Scheduled Events / Practice Sessions on this Date */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                          <Icons.Clock className="w-4 h-4 text-emerald-600" />
+                          Scheduled Rehearsals &amp; Events
+                          <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                            {calSelectedDateEvents.length}
+                          </span>
+                        </h4>
+                      </div>
+
+                      {calSelectedDateEvents.length === 0 ? (
+                        <div className="p-6 rounded-xl border border-dashed border-slate-200 text-center text-slate-400">
+                          <p className="text-xs font-medium">No rehearsal or event scheduled on this date.</p>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAddEventModal(calSelectedDateStr)}
+                            className="mt-2 text-xs font-bold text-emerald-600 hover:underline"
+                          >
+                            + Schedule Practice / Rehearsal
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                          {calSelectedDateEvents.map((ev) => (
+                            <div
+                              key={ev.id}
+                              className={`p-3.5 rounded-xl border transition-all space-y-2 ${
+                                ev.completed
+                                  ? 'border-slate-200 bg-slate-50/50 opacity-75'
+                                  : 'border-emerald-200 bg-emerald-50/30'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className={`font-bold text-sm ${ev.completed ? 'line-through text-slate-500' : 'text-slate-900'}`}>
+                                      {ev.title}
+                                    </span>
+                                    {ev.time && (
+                                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-600">
+                                        {ev.time}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-slate-500 mt-1">
+                                    {ev.name && <span>Choir: <strong>{ev.name}</strong> • </span>}
+                                    {ev.zion && <span>Zion: {ev.zion}</span>}
+                                  </div>
+                                  {ev.notes && (
+                                    <p className="text-xs text-slate-600 mt-1 italic bg-white/60 p-1.5 rounded border border-slate-100">
+                                      &ldquo;{ev.notes}&rdquo;
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleEventCompleted(ev.id)}
+                                    className={`p-1.5 rounded-lg border text-xs font-bold transition-all ${
+                                      ev.completed
+                                        ? 'bg-emerald-600 text-white border-emerald-600'
+                                        : 'border-slate-300 hover:bg-slate-100 text-slate-600'
+                                    }`}
+                                    title={ev.completed ? 'Mark Incomplete' : 'Mark Completed'}
+                                  >
+                                    <Icons.Check className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditCalEvent(ev)}
+                                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all"
+                                    title="Edit Event"
+                                  >
+                                    <Icons.Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCalEvent(ev.id)}
+                                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 text-rose-600 transition-all"
+                                    title="Delete Event"
+                                  >
+                                    <Icons.Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </main>
 
           {/* Schedule Event Modal */}
@@ -3428,7 +3984,7 @@
                 <div className="p-5 border-b border-slate-100 flex items-center justify-between">
                   <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
                     <Icons.CalendarPlus className="w-5 h-5 text-indigo-600" />
-                    Schedule Choir Event / Rehearsal
+                    {calEditingEventId ? 'Edit Choir Event / Rehearsal' : 'Schedule Choir Event / Rehearsal'}
                   </h3>
                   <button
                     type="button"
@@ -3542,7 +4098,7 @@
                       type="submit"
                       className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all"
                     >
-                      Save Event
+                      {calEditingEventId ? 'Save Changes' : 'Save Event'}
                     </button>
                   </div>
                 </form>
