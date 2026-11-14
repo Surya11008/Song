@@ -78,6 +78,11 @@
     );
 
     const Icons = {
+      Calendar: (p) => <IconSvg {...p}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></IconSvg>,
+      Clock: (p) => <IconSvg {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconSvg>,
+      ChevronLeft: (p) => <IconSvg {...p}><polyline points="15 18 9 12 15 6"/></IconSvg>,
+      ChevronRight: (p) => <IconSvg {...p}><polyline points="9 18 15 12 9 6"/></IconSvg>,
+      CalendarPlus: (p) => <IconSvg {...p}><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M10 16h4"/><path d="M12 14v4"/></IconSvg>,
       Music: (p) => <IconSvg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconSvg>,
       Plus: (p) => <IconSvg {...p}><path d="M5 12h14"/><path d="M12 5v14"/></IconSvg>,
       Check: (p) => <IconSvg {...p}><path d="M20 6 9 17l-5-5"/></IconSvg>,
@@ -247,6 +252,7 @@
       EVALUATIONS: 'choir_v2_evaluations',
       ADMIN_SESSION: 'choir_v2_admin_session',
       LAYOUT_MODE: 'choir_v2_layout_mode',
+      CALENDAR_EVENTS: 'choir_v2_calendar_events',
     };
 
     // Admin Credentials
@@ -3125,6 +3131,135 @@
               </div>
             )}
           </main>
+
+          {/* Schedule Event Modal */}
+          {calModalOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+                <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                  <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                    <Icons.CalendarPlus className="w-5 h-5 text-indigo-600" />
+                    Schedule Choir Event / Rehearsal
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setCalModalOpen(false)}
+                    className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                  >
+                    <Icons.X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveCalEvent} className="p-5 space-y-4">
+                  {/* Date */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Event Date
+                    </label>
+                    <input
+                      type="date"
+                      value={calEventDate}
+                      onChange={(e) => setCalEventDate(e.target.value)}
+                      className="w-full text-xs font-semibold px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      required
+                    />
+                  </div>
+
+                  {/* Title */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Event Title / Type
+                    </label>
+                    <input
+                      type="text"
+                      value={calEventTitle}
+                      onChange={(e) => setCalEventTitle(e.target.value)}
+                      placeholder="e.g. Choir Practice, Sunday Rehearsal, Audition"
+                      className="w-full text-xs font-semibold px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      required
+                    />
+                  </div>
+
+                  {/* Choir Selection */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Choir / Team
+                    </label>
+                    <select
+                      value={calEventName}
+                      onChange={(e) => setCalEventName(e.target.value)}
+                      className="w-full text-xs font-semibold px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    >
+                      <option value="">All / General Choir</option>
+                      {namesList.map((n) => (
+                        <option key={n} value={n}>{n}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Zion & Time Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Zion
+                      </label>
+                      <select
+                        value={calEventZion}
+                        onChange={(e) => setCalEventZion(e.target.value)}
+                        className="w-full text-xs font-semibold px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      >
+                        {zionsList.map((z) => (
+                          <option key={z} value={z}>{z}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                        Time
+                      </label>
+                      <input
+                        type="time"
+                        value={calEventTime}
+                        onChange={(e) => setCalEventTime(e.target.value)}
+                        className="w-full text-xs font-semibold px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Notes / Songs to Practice
+                    </label>
+                    <textarea
+                      value={calEventNotes}
+                      onChange={(e) => setCalEventNotes(e.target.value)}
+                      placeholder="e.g. Practice Song #23 and #45, focus on soprano parts"
+                      rows={2}
+                      className="w-full text-xs font-semibold px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setCalModalOpen(false)}
+                      className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all"
+                    >
+                      Save Event
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Admin Login Modal */}
           {adminModalOpen && (
