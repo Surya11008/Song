@@ -14,6 +14,41 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Firebase App & Analytics SDKs -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L3XR047S9Q"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L3XR047S9Q');
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
+  <script>
+    // Web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0ZL4r72-G6XCapKvjA-cbOWJbjC9dNuI",
+      authDomain: "sni-org-in.firebaseapp.com",
+      projectId: "sni-org-in",
+      storageBucket: "sni-org-in.firebasestorage.app",
+      messagingSenderId: "717850324141",
+      appId: "1:717850324141:web:17280789950030ea386a24",
+      measurementId: "G-L3XR047S9Q"
+    };
+
+    // Initialize Firebase
+    try {
+      if (typeof firebase !== 'undefined') {
+        const app = firebase.initializeApp(firebaseConfig);
+        const analytics = firebase.analytics();
+        window.firebaseApp = app;
+        window.firebaseAnalytics = analytics;
+        console.log("Firebase App & Analytics initialized successfully for sni-org-in");
+      }
+    } catch (e) {
+      console.warn("Firebase initialization notice:", e);
+    }
+  </script>
   <style>
     body {
       font-family: 'Inter', sans-serif;

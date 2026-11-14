@@ -1,0 +1,3330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choir Grading – 100 Marks</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- React 18 & Babel Standalone for Single-File Execution -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Firebase App & Analytics SDKs -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-L3XR047S9Q"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-L3XR047S9Q');
+  </script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
+  <script>
+    // Web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0ZL4r72-G6XCapKvjA-cbOWJbjC9dNuI",
+      authDomain: "sni-org-in.firebaseapp.com",
+      projectId: "sni-org-in",
+      storageBucket: "sni-org-in.firebasestorage.app",
+      messagingSenderId: "717850324141",
+      appId: "1:717850324141:web:17280789950030ea386a24",
+      measurementId: "G-L3XR047S9Q"
+    };
+
+    // Initialize Firebase
+    try {
+      if (typeof firebase !== 'undefined') {
+        const app = firebase.initializeApp(firebaseConfig);
+        const analytics = firebase.analytics();
+        window.firebaseApp = app;
+        window.firebaseAnalytics = analytics;
+        console.log("Firebase App & Analytics initialized successfully for sni-org-in");
+      }
+    } catch (e) {
+      console.warn("Firebase initialization notice:", e);
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Clean Inline SVG Icon Helper
+    const IconSvg = ({ children, className = "w-4 h-4" }) => (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+      >
+        {children}
+      </svg>
+    );
+
+    const Icons = {
+      Music: (p) => <IconSvg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconSvg>,
+      Plus: (p) => <IconSvg {...p}><path d="M5 12h14"/><path d="M12 5v14"/></IconSvg>,
+      Check: (p) => <IconSvg {...p}><path d="M20 6 9 17l-5-5"/></IconSvg>,
+      X: (p) => <IconSvg {...p}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconSvg>,
+      Trophy: (p) => <IconSvg {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></IconSvg>,
+      Users: (p) => <IconSvg {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></IconSvg>,
+      MapPin: (p) => <IconSvg {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></IconSvg>,
+      GitBranch: (p) => <IconSvg {...p}><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></IconSvg>,
+      UserCheck: (p) => <IconSvg {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></IconSvg>,
+      Search: (p) => <IconSvg {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></IconSvg>,
+      Download: (p) => <IconSvg {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></IconSvg>,
+      Trash2: (p) => <IconSvg {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconSvg>,
+      BarChart3: (p) => <IconSvg {...p}><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></IconSvg>,
+      ClipboardCheck: (p) => <IconSvg {...p}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></IconSvg>,
+      Filter: (p) => <IconSvg {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></IconSvg>,
+      RotateCcw: (p) => <IconSvg {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconSvg>,
+      ChevronDown: (p) => <IconSvg {...p}><path d="m6 9 6 6 6-6"/></IconSvg>,
+      ChevronUp: (p) => <IconSvg {...p}><path d="m18 15-6-6-6 6"/></IconSvg>,
+      Award: (p) => <IconSvg {...p}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></IconSvg>,
+      AlertCircle: (p) => <IconSvg {...p}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></IconSvg>,
+      Sparkles: (p) => <IconSvg {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></IconSvg>,
+      CheckCircle2: (p) => <IconSvg {...p}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></IconSvg>,
+      Edit3: (p) => <IconSvg {...p}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></IconSvg>,
+      ArrowLeft: (p) => <IconSvg {...p}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></IconSvg>,
+      ArrowRight: (p) => <IconSvg {...p}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></IconSvg>,
+      Tag: (p) => <IconSvg {...p}><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></IconSvg>,
+      ShieldCheck: (p) => <IconSvg {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></IconSvg>,
+      Layers: (p) => <IconSvg {...p}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></IconSvg>,
+      Lock: (p) => <IconSvg {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconSvg>,
+      Unlock: (p) => <IconSvg {...p}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></IconSvg>,
+      LogOut: (p) => <IconSvg {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></IconSvg>,
+      Eye: (p) => <IconSvg {...p}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></IconSvg>,
+      EyeOff: (p) => <IconSvg {...p}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></IconSvg>,
+      LayoutGrid: (p) => <IconSvg {...p}><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></IconSvg>,
+      List: (p) => <IconSvg {...p}><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></IconSvg>,
+    };
+
+    // 9 Grading Categories (Total = 100 Marks)
+    const GRADING_CATEGORIES = [
+      { id: 'voice_pitch', label: 'Voice & Pitch', icon: '🎶', max: 20 },
+      { id: 'harmony_parts', label: 'Harmony / Parts', icon: '🎼', max: 15 },
+      { id: 'rhythm_timing', label: 'Rhythm & Timing', icon: '🥁', max: 10 },
+      { id: 'voice_balance', label: 'Voice Balance', icon: '🎤', max: 10 },
+      { id: 'worship_expression', label: 'Worship & Spiritual Expression', icon: '🙏', max: 15 },
+      { id: 'teamwork_coordination', label: 'Teamwork & Coordination', icon: '👥', max: 10 },
+      { id: 'song_knowledge', label: 'Song Knowledge & Preparation', icon: '📖', max: 10 },
+      { id: 'appearance_discipline', label: 'Appearance & Discipline', icon: '👔', max: 5 },
+      { id: 'stage_presence', label: 'Stage Presence', icon: '😊', max: 5 },
+    ];
+
+    // Default Initial Lists
+    const DEFAULT_EVALUATORS = [
+      'Pastor Samuel',
+      'Music Director David',
+      'Sister Grace',
+    ];
+
+    const DEFAULT_NAMES = [
+      'Choir Team A',
+      'Youth Choir',
+      'Senior Choir',
+      'Praise & Worship Team',
+    ];
+
+    const DEFAULT_ZIONS = [
+      'Nellore',
+      'Rajahmundry',
+      'Bhimavaram',
+      'Jangareddygudem',
+      'Eluru',
+      'Dowleshwaram',
+      'Gokavaram',
+    ];
+
+    const DEFAULT_BRANCHES = [
+      'Main Branch',
+      'Town Branch',
+      'East Branch',
+      'West Branch',
+    ];
+
+    const DEFAULT_STATUSES = [
+      'Selected',
+      'Shortlisted',
+      'Pending',
+      'Approved',
+      'Needs Practice',
+      'Finalist',
+    ];
+
+    // Songs #1 to #485
+    const SONGS_LIST = Array.from({ length: 485 }, (_, i) => ({
+      number: i + 1,
+      label: `Song #${i + 1}`,
+    }));
+
+    // Grade Level Helper
+    function getGradeDetails(score) {
+      if (score >= 90) {
+        return {
+          medal: '🥇',
+          label: 'Excellent / A+',
+          short: 'A+',
+          badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
+          barColor: 'bg-amber-500',
+        };
+      }
+      if (score >= 80) {
+        return {
+          medal: '🥈',
+          label: 'Very Good / A',
+          short: 'A',
+          badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
+          barColor: 'bg-slate-500',
+        };
+      }
+      if (score >= 70) {
+        return {
+          medal: '🥉',
+          label: 'Good / B',
+          short: 'B',
+          badgeBg: 'bg-orange-100 text-orange-900 border-orange-300',
+          barColor: 'bg-orange-500',
+        };
+      }
+      if (score >= 60) {
+        return {
+          medal: '⭐',
+          label: 'Satisfactory / C',
+          short: 'C',
+          badgeBg: 'bg-blue-100 text-blue-900 border-blue-300',
+          barColor: 'bg-blue-500',
+        };
+      }
+      return {
+        medal: '📌',
+        label: 'Needs Improvement / D',
+        short: 'D',
+        badgeBg: 'bg-rose-100 text-rose-900 border-rose-300',
+        barColor: 'bg-rose-500',
+      };
+    }
+
+    // Status Badge Styling Helper
+    function getStatusBadgeStyle(status) {
+      const s = (status || '').toLowerCase();
+      if (s.includes('select') || s.includes('approv') || s.includes('final')) {
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      }
+      if (s.includes('shortlist')) {
+        return 'bg-indigo-100 text-indigo-800 border-indigo-300';
+      }
+      if (s.includes('practice') || s.includes('reject') || s.includes('hold')) {
+        return 'bg-rose-100 text-rose-800 border-rose-300';
+      }
+      return 'bg-amber-100 text-amber-800 border-amber-300';
+    }
+
+    // Storage Keys
+    const STORAGE_KEYS = {
+      NAMES: 'choir_v2_names',
+      ZIONS: 'choir_v2_zions',
+      BRANCHES: 'choir_v2_branches',
+      EVALUATORS: 'choir_v2_evaluators',
+      STATUSES: 'choir_v2_statuses',
+      NAME_STATUS_MAP: 'choir_v2_name_status_map',
+      EVALUATIONS: 'choir_v2_evaluations',
+      ADMIN_SESSION: 'choir_v2_admin_session',
+      LAYOUT_MODE: 'choir_v2_layout_mode',
+    };
+
+    // Admin Credentials
+    const ADMIN_CREDENTIALS = {
+      id: 'surya11008',
+      password: 'Suri742766.',
+    };
+
+    // Reusable Grid View / List View Toggle Switcher
+    function ViewModeToggle({ mode, onChange, label = 'Layout' }) {
+      return (
+        <div className="inline-flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+          <span className="hidden sm:inline text-[11px] font-bold uppercase tracking-wider text-slate-400 pl-2 pr-1">
+            {label}:
+          </span>
+          <button
+            type="button"
+            onClick={() => onChange('grid')}
+            aria-pressed={mode === 'grid'}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              mode === 'grid'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Icons.LayoutGrid className="w-3.5 h-3.5" />
+            <span>Grid</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange('list')}
+            aria-pressed={mode === 'list'}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              mode === 'list'
+                ? 'bg-white text-indigo-700 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Icons.List className="w-3.5 h-3.5" />
+            <span>List</span>
+          </button>
+        </div>
+      );
+    }
+
+    // Reusable Select Component with inline (+ Add / Edit / Remove) controls (Admin-only)
+    function ManageableSelect({
+      label,
+      icon: IconComp,
+      value,
+      onChange,
+      options,
+      placeholder,
+      isAdmin,
+      onAdd,
+      onEdit,
+      onRemove,
+      badgeSlot,
+    }) {
+      return (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+              {label}
+            </label>
+            {badgeSlot}
+          </div>
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5">
+            <div className="relative flex-1 min-w-[180px]">
+              {IconComp && (
+                <IconComp className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              )}
+              <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className={`w-full ${
+                  IconComp ? 'pl-9' : 'pl-3'
+                } pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition`}
+              >
+                <option value="">{placeholder}</option>
+                {options.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {isAdmin && (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={onAdd}
+                  title={`Add new ${label}`}
+                  className="inline-flex items-center gap-1 px-2.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-bold shadow-xs transition"
+                >
+                  <Icons.Plus className="w-3.5 h-3.5" />
+                  <span>Add</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  disabled={!value}
+                  title={value ? `Edit "${value}"` : `Select a ${label} to edit`}
+                  className="inline-flex items-center gap-1 px-2.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 disabled:opacity-40 disabled:pointer-events-none border border-amber-300 text-amber-800 text-xs font-bold transition"
+                >
+                  <Icons.Edit3 className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Edit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onRemove}
+                  disabled={!value}
+                  title={value ? `Remove "${value}"` : `Select a ${label} to remove`}
+                  className="inline-flex items-center gap-1 px-2.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 disabled:opacity-40 disabled:pointer-events-none border border-rose-300 text-rose-700 text-xs font-bold transition"
+                >
+                  <Icons.Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Remove</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      // Admin Authentication State
+      const [isAdmin, setIsAdmin] = useState(() => {
+        try {
+          return sessionStorage.getItem(STORAGE_KEYS.ADMIN_SESSION) === 'true';
+        } catch {
+          return false;
+        }
+      });
+      const [adminModalOpen, setAdminModalOpen] = useState(false);
+      const [adminIdInput, setAdminIdInput] = useState('');
+      const [adminPasswordInput, setAdminPasswordInput] = useState('');
+      const [showAdminPassword, setShowAdminPassword] = useState(false);
+      const [adminLoginError, setAdminLoginError] = useState('');
+
+      // Navigation State
+      const [activeView, setActiveView] = useState('evaluators');
+      const [activeEvaluator, setActiveEvaluator] = useState('');
+      const [evaluatorSearch, setEvaluatorSearch] = useState('');
+
+      // Layout States
+      const [layoutMode, setLayoutMode] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.LAYOUT_MODE);
+          return saved === 'list' ? 'list' : 'grid';
+        } catch {
+          return 'grid';
+        }
+      });
+      const [categoriesLayout, setCategoriesLayout] = useState('list');
+      const [recentEntriesLayout, setRecentEntriesLayout] = useState('list');
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.LAYOUT_MODE, layoutMode);
+        } catch (e) {
+          console.error(e);
+        }
+      }, [layoutMode]);
+
+      const handleGlobalLayoutChange = (mode) => {
+        setLayoutMode(mode);
+        setCategoriesLayout(mode);
+        setRecentEntriesLayout(mode);
+      };
+
+      // Persistent Lists
+      const [evaluatorsList, setEvaluatorsList] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.EVALUATORS);
+          return saved ? JSON.parse(saved) : DEFAULT_EVALUATORS;
+        } catch {
+          return DEFAULT_EVALUATORS;
+        }
+      });
+
+      const [namesList, setNamesList] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.NAMES);
+          return saved ? JSON.parse(saved) : DEFAULT_NAMES;
+        } catch {
+          return DEFAULT_NAMES;
+        }
+      });
+
+      const [zionsList, setZionsList] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.ZIONS);
+          return saved ? JSON.parse(saved) : DEFAULT_ZIONS;
+        } catch {
+          return DEFAULT_ZIONS;
+        }
+      });
+
+      const [branchesList, setBranchesList] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.BRANCHES);
+          return saved ? JSON.parse(saved) : DEFAULT_BRANCHES;
+        } catch {
+          return DEFAULT_BRANCHES;
+        }
+      });
+
+      const [statusesList, setStatusesList] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.STATUSES);
+          return saved ? JSON.parse(saved) : DEFAULT_STATUSES;
+        } catch {
+          return DEFAULT_STATUSES;
+        }
+      });
+
+      const [nameStatusMap, setNameStatusMap] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.NAME_STATUS_MAP);
+          return saved
+            ? JSON.parse(saved)
+            : {
+                'Choir Team A': 'Selected',
+                'Youth Choir': 'Shortlisted',
+                'Senior Choir': 'Pending',
+                'Praise & Worship Team': 'Approved',
+              };
+        } catch {
+          return {};
+        }
+      });
+
+      const [evaluations, setEvaluations] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.EVALUATIONS);
+          return saved ? JSON.parse(saved) : [];
+        } catch {
+          return [];
+        }
+      });
+
+      // Sync to localStorage
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.EVALUATORS, JSON.stringify(evaluatorsList));
+        } catch (e) {}
+      }, [evaluatorsList]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.NAMES, JSON.stringify(namesList));
+        } catch (e) {}
+      }, [namesList]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.ZIONS, JSON.stringify(zionsList));
+        } catch (e) {}
+      }, [zionsList]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.BRANCHES, JSON.stringify(branchesList));
+        } catch (e) {}
+      }, [branchesList]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.STATUSES, JSON.stringify(statusesList));
+        } catch (e) {}
+      }, [statusesList]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.NAME_STATUS_MAP, JSON.stringify(nameStatusMap));
+        } catch (e) {}
+      }, [nameStatusMap]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(evaluations));
+        } catch (e) {}
+      }, [evaluations]);
+
+      // Form State
+      const [songNumber, setSongNumber] = useState(1);
+      const [songSearch, setSongSearch] = useState('');
+      const [selectedName, setSelectedName] = useState('');
+      const [selectedZion, setSelectedZion] = useState('Nellore');
+      const [selectedBranch, setSelectedBranch] = useState('');
+      const [selectedStatus, setSelectedStatus] = useState('Pending');
+      const [editingEvalId, setEditingEvalId] = useState(null);
+
+      const initialMarks = useMemo(() => {
+        const obj = {};
+        GRADING_CATEGORIES.forEach((c) => {
+          obj[c.id] = 0;
+        });
+        return obj;
+      }, []);
+
+      const [marks, setMarks] = useState(initialMarks);
+
+      // Toast Notification
+      const [toast, setToast] = useState(null);
+      const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => {
+          setToast((prev) => (prev && prev.message === message ? null : prev));
+        }, 3200);
+      };
+
+      // CRUD Modal State
+      const [crudModal, setCrudModal] = useState({
+        open: false,
+        mode: 'add',
+        field: null,
+        title: '',
+        placeholder: '',
+        oldValue: '',
+        value: '',
+      });
+
+      // Filters & UI State for Results View
+      const [filterStatus, setFilterStatus] = useState('ALL');
+      const [filterName, setFilterName] = useState('ALL');
+      const [filterZion, setFilterZion] = useState('ALL');
+      const [filterBranch, setFilterBranch] = useState('ALL');
+      const [filterEvaluator, setFilterEvaluator] = useState('ALL');
+      const [filterSong, setFilterSong] = useState('');
+      const [expandedNameCard, setExpandedNameCard] = useState(null);
+      const [confirmDeleteEvalId, setConfirmDeleteEvalId] = useState(null);
+
+      // Open CRUD Modal (Admin-only)
+      const openCrudModal = (mode, field, label, currentVal = '', placeholder = '') => {
+        if (!isAdmin) {
+          showToast('Admin login required for Add, Edit, or Remove actions.', 'error');
+          setAdminModalOpen(true);
+          return;
+        }
+        if ((mode === 'edit' || mode === 'remove') && !currentVal) {
+          showToast(`Please select a ${label} first.`, 'error');
+          return;
+        }
+        const titleMap = {
+          add: `Add New ${label}`,
+          edit: `Edit ${label}`,
+          remove: `Remove ${label}`,
+        };
+        setCrudModal({
+          open: true,
+          mode,
+          field,
+          title: titleMap[mode],
+          placeholder: placeholder || `Enter ${label} name...`,
+          oldValue: currentVal,
+          value: mode === 'edit' ? currentVal : '',
+        });
+      };
+
+      // Admin Login / Logout
+      const handleOpenAdminModal = () => {
+        setAdminIdInput('');
+        setAdminPasswordInput('');
+        setAdminLoginError('');
+        setShowAdminPassword(false);
+        setAdminModalOpen(true);
+      };
+
+      const handleAdminLoginSubmit = (e) => {
+        e.preventDefault();
+        if (
+          adminIdInput.trim() === ADMIN_CREDENTIALS.id &&
+          adminPasswordInput === ADMIN_CREDENTIALS.password
+        ) {
+          setIsAdmin(true);
+          try {
+            sessionStorage.setItem(STORAGE_KEYS.ADMIN_SESSION, 'true');
+          } catch (err) {}
+          setAdminModalOpen(false);
+          setAdminIdInput('');
+          setAdminPasswordInput('');
+          setAdminLoginError('');
+          showToast('Admin mode unlocked! Add, Edit & Remove controls enabled.');
+        } else {
+          setAdminLoginError('Invalid Admin ID or Password. Please check and try again.');
+        }
+      };
+
+      const handleAdminLogout = () => {
+        setIsAdmin(false);
+        setEditingEvalId(null);
+        setConfirmDeleteEvalId(null);
+        try {
+          sessionStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
+        } catch (err) {}
+        showToast('Logged out of Admin mode.', 'info');
+      };
+
+      // Handle CRUD Submit
+      const handleCrudSubmit = (e) => {
+        e.preventDefault();
+        const { mode, field, oldValue, value } = crudModal;
+        const trimmed = value.trim();
+
+        if (mode !== 'remove' && !trimmed) {
+          showToast('Please enter a valid value.', 'error');
+          return;
+        }
+
+        if (field === 'evaluator') {
+          if (mode === 'add') {
+            if (!evaluatorsList.some((x) => x.toLowerCase() === trimmed.toLowerCase())) {
+              setEvaluatorsList((prev) => [...prev, trimmed]);
+            }
+            setActiveEvaluator(trimmed);
+            showToast(`Added Evaluator "${trimmed}"`);
+          } else if (mode === 'edit') {
+            setEvaluatorsList((prev) =>
+              prev.map((x) => (x === oldValue ? trimmed : x))
+            );
+            setEvaluations((prev) =>
+              prev.map((ev) => (ev.evaluator === oldValue ? { ...ev, evaluator: trimmed } : ev))
+            );
+            if (activeEvaluator === oldValue) setActiveEvaluator(trimmed);
+            if (filterEvaluator === oldValue) setFilterEvaluator(trimmed);
+            showToast(`Renamed Evaluator "${oldValue}" to "${trimmed}"`);
+          } else if (mode === 'remove') {
+            setEvaluatorsList((prev) => prev.filter((x) => x !== oldValue));
+            if (activeEvaluator === oldValue) {
+              setActiveEvaluator('');
+              if (activeView === 'workspace') setActiveView('evaluators');
+            }
+            if (filterEvaluator === oldValue) setFilterEvaluator('ALL');
+            showToast(`Removed Evaluator "${oldValue}"`, 'info');
+          }
+        } else if (field === 'name') {
+          if (mode === 'add') {
+            if (!namesList.some((x) => x.toLowerCase() === trimmed.toLowerCase())) {
+              setNamesList((prev) => [trimmed, ...prev]);
+            }
+            setSelectedName(trimmed);
+            setNameStatusMap((prev) => ({
+              ...prev,
+              [trimmed]: prev[trimmed] || statusesList[0] || 'Pending',
+            }));
+            showToast(`Added "${trimmed}"`);
+          } else if (mode === 'edit') {
+            setNamesList((prev) => prev.map((x) => (x === oldValue ? trimmed : x)));
+            setEvaluations((prev) =>
+              prev.map((ev) => (ev.name === oldValue ? { ...ev, name: trimmed } : ev))
+            );
+            setNameStatusMap((prev) => {
+              const copy = { ...prev };
+              if (copy[oldValue]) {
+                copy[trimmed] = copy[oldValue];
+                delete copy[oldValue];
+              }
+              return copy;
+            });
+            if (selectedName === oldValue) setSelectedName(trimmed);
+            if (filterName === oldValue) setFilterName(trimmed);
+            showToast(`Renamed "${oldValue}" to "${trimmed}"`);
+          } else if (mode === 'remove') {
+            setNamesList((prev) => prev.filter((x) => x !== oldValue));
+            if (selectedName === oldValue) setSelectedName('');
+            if (filterName === oldValue) setFilterName('ALL');
+            showToast(`Removed "${oldValue}"`, 'info');
+          }
+        } else if (field === 'zion') {
+          if (mode === 'add') {
+            if (!zionsList.some((x) => x.toLowerCase() === trimmed.toLowerCase())) {
+              setZionsList((prev) => [...prev, trimmed]);
+            }
+            setSelectedZion(trimmed);
+            showToast(`Added Zion "${trimmed}"`);
+          } else if (mode === 'edit') {
+            setZionsList((prev) => prev.map((x) => (x === oldValue ? trimmed : x)));
+            setEvaluations((prev) =>
+              prev.map((ev) => (ev.zion === oldValue ? { ...ev, zion: trimmed } : ev))
+            );
+            if (selectedZion === oldValue) setSelectedZion(trimmed);
+            if (filterZion === oldValue) setFilterZion(trimmed);
+            showToast(`Renamed Zion "${oldValue}" to "${trimmed}"`);
+          } else if (mode === 'remove') {
+            setZionsList((prev) => prev.filter((x) => x !== oldValue));
+            if (selectedZion === oldValue) setSelectedZion('');
+            if (filterZion === oldValue) setFilterZion('ALL');
+            showToast(`Removed Zion "${oldValue}"`, 'info');
+          }
+        } else if (field === 'branch') {
+          if (mode === 'add') {
+            if (!branchesList.some((x) => x.toLowerCase() === trimmed.toLowerCase())) {
+              setBranchesList((prev) => [...prev, trimmed]);
+            }
+            setSelectedBranch(trimmed);
+            showToast(`Added Branch "${trimmed}"`);
+          } else if (mode === 'edit') {
+            setBranchesList((prev) => prev.map((x) => (x === oldValue ? trimmed : x)));
+            setEvaluations((prev) =>
+              prev.map((ev) => (ev.branch === oldValue ? { ...ev, branch: trimmed } : ev))
+            );
+            if (selectedBranch === oldValue) setSelectedBranch(trimmed);
+            if (filterBranch === oldValue) setFilterBranch(trimmed);
+            showToast(`Renamed Branch "${oldValue}" to "${trimmed}"`);
+          } else if (mode === 'remove') {
+            setBranchesList((prev) => prev.filter((x) => x !== oldValue));
+            if (selectedBranch === oldValue) setSelectedBranch('');
+            if (filterBranch === oldValue) setFilterBranch('ALL');
+            showToast(`Removed Branch "${oldValue}"`, 'info');
+          }
+        } else if (field === 'status') {
+          if (mode === 'add') {
+            if (!statusesList.some((x) => x.toLowerCase() === trimmed.toLowerCase())) {
+              setStatusesList((prev) => [...prev, trimmed]);
+            }
+            setSelectedStatus(trimmed);
+            if (selectedName) {
+              setNameStatusMap((prev) => ({ ...prev, [selectedName]: trimmed }));
+            }
+            showToast(`Added Status "${trimmed}"`);
+          } else if (mode === 'edit') {
+            setStatusesList((prev) => prev.map((x) => (x === oldValue ? trimmed : x)));
+            setNameStatusMap((prev) => {
+              const updated = {};
+              Object.entries(prev).forEach(([k, v]) => {
+                updated[k] = v === oldValue ? trimmed : v;
+              });
+              return updated;
+            });
+            if (selectedStatus === oldValue) setSelectedStatus(trimmed);
+            if (filterStatus === oldValue) setFilterStatus(trimmed);
+            showToast(`Renamed Status "${oldValue}" to "${trimmed}"`);
+          } else if (mode === 'remove') {
+            setStatusesList((prev) => prev.filter((x) => x !== oldValue));
+            if (selectedStatus === oldValue) setSelectedStatus(statusesList[0] || '');
+            if (filterStatus === oldValue) setFilterStatus('ALL');
+            showToast(`Removed Status "${oldValue}"`, 'info');
+          }
+        }
+
+        setCrudModal({
+          open: false,
+          mode: 'add',
+          field: null,
+          title: '',
+          placeholder: '',
+          oldValue: '',
+          value: '',
+        });
+      };
+
+      // Filtered Songs
+      const filteredSongs = useMemo(() => {
+        const q = songSearch.trim().toLowerCase();
+        if (!q) return SONGS_LIST;
+        return SONGS_LIST.filter(
+          (s) => s.number.toString().includes(q) || s.label.toLowerCase().includes(q)
+        );
+      }, [songSearch]);
+
+      // Total Marks & Grade
+      const totalMarks = useMemo(() => {
+        return GRADING_CATEGORIES.reduce(
+          (sum, cat) => sum + (Number(marks[cat.id]) || 0),
+          0
+        );
+      }, [marks]);
+
+      const currentGrade = useMemo(() => getGradeDetails(totalMarks), [totalMarks]);
+
+      // Live Stats for Currently Selected Name
+      const selectedNameLiveAnalytics = useMemo(() => {
+        if (!selectedName) return null;
+        const nameEvals = evaluations.filter(
+          (ev) => ev.name.toLowerCase() === selectedName.toLowerCase()
+        );
+        const uniqueEvaluators = Array.from(new Set(nameEvals.map((e) => e.evaluator)));
+        const existingSum = nameEvals.reduce((acc, item) => acc + item.total, 0);
+        const existingCount = nameEvals.length;
+        const existingAvg = existingCount > 0 ? existingSum / existingCount : 0;
+
+        const otherEvals = nameEvals.filter((e) => e.id !== editingEvalId);
+        const projectedCount = otherEvals.length + 1;
+        const projectedSum =
+          otherEvals.reduce((acc, item) => acc + item.total, 0) + totalMarks;
+        const projectedAvg = projectedSum / projectedCount;
+
+        return {
+          status: nameStatusMap[selectedName] || selectedStatus || 'Pending',
+          evaluatorCount: uniqueEvaluators.length,
+          totalSubmissions: existingCount,
+          evaluatorsList: uniqueEvaluators,
+          existingSum,
+          existingAvg: Number(existingAvg.toFixed(2)),
+          existingPercent: Number(existingAvg.toFixed(1)),
+          projectedAvg: Number(projectedAvg.toFixed(2)),
+          projectedPercent: Number(projectedAvg.toFixed(1)),
+        };
+      }, [selectedName, evaluations, nameStatusMap, selectedStatus, totalMarks, editingEvalId]);
+
+      const handleSelectEvaluatorCard = (evaluatorName) => {
+        setActiveEvaluator(evaluatorName);
+        setEditingEvalId(null);
+        setMarks(initialMarks);
+        setActiveView('workspace');
+      };
+
+      const handleAssignStatusToName = (targetName, newStatus) => {
+        setSelectedStatus(newStatus);
+        if (targetName) {
+          setNameStatusMap((prev) => ({
+            ...prev,
+            [targetName]: newStatus,
+          }));
+          showToast(`Status for "${targetName}" set to "${newStatus}"`);
+        }
+      };
+
+      const handleSaveEvaluation = () => {
+        if (!activeEvaluator) {
+          showToast('Please select an Evaluator first.', 'error');
+          return;
+        }
+        if (!selectedName) {
+          showToast('Please select or add a Name (Person/Group/Team).', 'error');
+          return;
+        }
+        if (!selectedZion) {
+          showToast('Please select or add a Zion.', 'error');
+          return;
+        }
+        if (!selectedBranch) {
+          showToast('Please select or add a Branch.', 'error');
+          return;
+        }
+
+        const gradeObj = getGradeDetails(totalMarks);
+
+        if (selectedStatus) {
+          setNameStatusMap((prev) => ({
+            ...prev,
+            [selectedName]: selectedStatus,
+          }));
+        }
+
+        if (editingEvalId) {
+          setEvaluations((prev) =>
+            prev.map((item) =>
+              item.id === editingEvalId
+                ? {
+                    ...item,
+                    songNumber: Number(songNumber),
+                    name: selectedName,
+                    zion: selectedZion,
+                    branch: selectedBranch,
+                    evaluator: activeEvaluator,
+                    marks: { ...marks },
+                    total: totalMarks,
+                    grade: gradeObj.label,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : item
+            )
+          );
+          showToast(`Updated marks for ${selectedName} (Song #${songNumber})!`);
+          setEditingEvalId(null);
+        } else {
+          const newEntry = {
+            id: `eval_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            songNumber: Number(songNumber),
+            name: selectedName,
+            zion: selectedZion,
+            branch: selectedBranch,
+            evaluator: activeEvaluator,
+            marks: { ...marks },
+            total: totalMarks,
+            grade: gradeObj.label,
+            createdAt: new Date().toISOString(),
+          };
+          setEvaluations((prev) => [newEntry, ...prev]);
+          showToast(
+            `Saved ${totalMarks}/100 for ${selectedName} (Song #${songNumber})!`
+          );
+        }
+
+        setMarks(initialMarks);
+      };
+
+      const handleEditEvaluation = (entry) => {
+        if (!isAdmin) {
+          showToast('Admin login required to edit saved marks.', 'error');
+          return;
+        }
+        setActiveEvaluator(entry.evaluator);
+        setSongNumber(entry.songNumber);
+        setSelectedName(entry.name);
+        setSelectedZion(entry.zion);
+        setSelectedBranch(entry.branch);
+        setSelectedStatus(nameStatusMap[entry.name] || statusesList[0] || 'Pending');
+        setMarks({ ...entry.marks });
+        setEditingEvalId(entry.id);
+        setActiveView('workspace');
+        showToast(`Editing Song #${entry.songNumber} for ${entry.name}`, 'info');
+      };
+
+      const handleDeleteEvaluation = (id) => {
+        if (!isAdmin) {
+          showToast('Admin login required to remove saved marks.', 'error');
+          return;
+        }
+        setEvaluations((prev) => prev.filter((item) => item.id !== id));
+        setConfirmDeleteEvalId(null);
+        if (editingEvalId === id) {
+          setEditingEvalId(null);
+          setMarks(initialMarks);
+        }
+        showToast('Evaluation entry deleted.', 'info');
+      };
+
+      const activeEvaluatorSubmissions = useMemo(() => {
+        return evaluations.filter((ev) => ev.evaluator === activeEvaluator);
+      }, [evaluations, activeEvaluator]);
+
+      const filteredEvaluations = useMemo(() => {
+        return evaluations.filter((ev) => {
+          const currentNameStatus = nameStatusMap[ev.name] || 'Pending';
+          if (filterStatus !== 'ALL' && currentNameStatus !== filterStatus) return false;
+          if (filterName !== 'ALL' && ev.name !== filterName) return false;
+          if (filterZion !== 'ALL' && ev.zion !== filterZion) return false;
+          if (filterBranch !== 'ALL' && ev.branch !== filterBranch) return false;
+          if (filterEvaluator !== 'ALL' && ev.evaluator !== filterEvaluator) return false;
+          if (
+            filterSong.trim() !== '' &&
+            !ev.songNumber.toString().includes(filterSong.trim())
+          ) {
+            return false;
+          }
+          return true;
+        });
+      }, [
+        evaluations,
+        nameStatusMap,
+        filterStatus,
+        filterName,
+        filterZion,
+        filterBranch,
+        filterEvaluator,
+        filterSong,
+      ]);
+
+      const aggregatedNamesSummary = useMemo(() => {
+        const map = new Map();
+
+        namesList.forEach((n) => {
+          const st = nameStatusMap[n] || 'Pending';
+          if (filterStatus !== 'ALL' && st !== filterStatus) return;
+          if (filterName !== 'ALL' && n !== filterName) return;
+
+          map.set(n, {
+            name: n,
+            status: st,
+            entries: [],
+            totalScoreSum: 0,
+            zions: new Set(),
+            branches: new Set(),
+            songs: new Set(),
+            evaluators: new Set(),
+          });
+        });
+
+        filteredEvaluations.forEach((ev) => {
+          const st = nameStatusMap[ev.name] || 'Pending';
+          if (!map.has(ev.name)) {
+            map.set(ev.name, {
+              name: ev.name,
+              status: st,
+              entries: [],
+              totalScoreSum: 0,
+              zions: new Set(),
+              branches: new Set(),
+              songs: new Set(),
+              evaluators: new Set(),
+            });
+          }
+          const group = map.get(ev.name);
+          group.entries.push(ev);
+          group.totalScoreSum += ev.total;
+          group.zions.add(ev.zion);
+          group.branches.add(ev.branch);
+          group.songs.add(ev.songNumber);
+          group.evaluators.add(ev.evaluator);
+        });
+
+        const list = Array.from(map.values())
+          .filter((g) => {
+            if (
+              filterZion !== 'ALL' ||
+              filterBranch !== 'ALL' ||
+              filterEvaluator !== 'ALL' ||
+              filterSong.trim() !== ''
+            ) {
+              return g.entries.length > 0;
+            }
+            return true;
+          })
+          .map((g) => {
+            const evalCount = g.entries.length;
+            const uniqueEvaluatorsCount = g.evaluators.size;
+            const avgMarks = evalCount > 0 ? g.totalScoreSum / evalCount : 0;
+            const avgPercent = avgMarks;
+            const gradeInfo =
+              evalCount > 0 ? getGradeDetails(Math.round(avgMarks)) : null;
+
+            return {
+              name: g.name,
+              status: g.status,
+              evalCount,
+              uniqueEvaluatorsCount,
+              totalScoreSum: g.totalScoreSum,
+              avgMarks: Number(avgMarks.toFixed(2)),
+              avgPercent: Number(avgPercent.toFixed(1)),
+              gradeInfo,
+              zions: Array.from(g.zions).join(', ') || '—',
+              branches: Array.from(g.branches).join(', ') || '—',
+              songs: Array.from(g.songs).sort((a, b) => a - b),
+              evaluators: Array.from(g.evaluators),
+              entries: g.entries,
+            };
+          });
+
+        return list.sort((a, b) => b.avgMarks - a.avgMarks || b.evalCount - a.evalCount);
+      }, [
+        namesList,
+        nameStatusMap,
+        filteredEvaluations,
+        filterStatus,
+        filterName,
+        filterZion,
+        filterBranch,
+        filterEvaluator,
+        filterSong,
+      ]);
+
+      const handleExportCSV = () => {
+        if (evaluations.length === 0) {
+          showToast('No evaluation records to export.', 'error');
+          return;
+        }
+
+        const headers = [
+          'Date',
+          'Evaluator',
+          'Song Number',
+          'Name (Person/Group/Team)',
+          'Status',
+          'Zion',
+          'Branch',
+          ...GRADING_CATEGORIES.map((c) => `${c.label} (${c.max})`),
+          'Total Marks (100)',
+          'Grade',
+        ];
+
+        const rows = evaluations.map((ev) => [
+          `"${new Date(ev.createdAt).toLocaleString()}"`,
+          `"${ev.evaluator.replace(/"/g, '""')}"`,
+          `Song #${ev.songNumber}`,
+          `"${ev.name.replace(/"/g, '""')}"`,
+          `"${(nameStatusMap[ev.name] || 'Pending').replace(/"/g, '""')}"`,
+          `"${ev.zion.replace(/"/g, '""')}"`,
+          `"${ev.branch.replace(/"/g, '""')}"`,
+          ...GRADING_CATEGORIES.map((c) => ev.marks[c.id] ?? 0),
+          ev.total,
+          `"${ev.grade}"`,
+        ]);
+
+        const summaryHeaders = [
+          '',
+          '--- COMBINED SUMMARY BY NAME ---',
+          'Name (Person/Group/Team)',
+          'Status',
+          'Evaluators Count',
+          'Total Submissions',
+          'Combined Total Marks',
+          'Average Marks (100)',
+          'Average Percentage (%)',
+          'Overall Grade',
+        ];
+
+        const summaryRows = aggregatedNamesSummary.map((ag) => [
+          '',
+          '',
+          `"${ag.name.replace(/"/g, '""')}"`,
+          `"${ag.status.replace(/"/g, '""')}"`,
+          ag.uniqueEvaluatorsCount,
+          ag.evalCount,
+          ag.totalScoreSum,
+          ag.avgMarks,
+          `${ag.avgPercent}%`,
+          `"${ag.gradeInfo ? ag.gradeInfo.label : 'Not Graded'}"`,
+        ]);
+
+        const csvContent =
+          'data:text/csv;charset=utf-8,' +
+          [
+            headers.join(','),
+            ...rows.map((r) => r.join(',')),
+            '',
+            summaryHeaders.join(','),
+            ...summaryRows.map((r) => r.join(',')),
+          ].join('\n');
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute(
+          'download',
+          `Choir_Grading_Summary_${new Date().toISOString().slice(0, 10)}.csv`
+        );
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('CSV report exported!');
+      };
+
+      const visibleEvaluators = useMemo(() => {
+        const q = evaluatorSearch.trim().toLowerCase();
+        if (!q) return evaluatorsList;
+        return evaluatorsList.filter((ev) => ev.toLowerCase().includes(q));
+      }, [evaluatorsList, evaluatorSearch]);
+
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
+          {/* Top App Header */}
+          <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 shadow-xs">
+            <div className="max-w-5xl mx-auto px-4 py-3 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div
+                  onClick={() => setActiveView('evaluators')}
+                  className="flex items-center gap-2.5 cursor-pointer"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+                    <Icons.Music className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 leading-tight">
+                      Choir Grading – 100 Marks
+                    </h1>
+                    <p className="text-xs text-slate-500">
+                      Evaluators • Songs 1–485 • Status &amp; Combined Averages
+                    </p>
+                  </div>
+                </div>
+
+                {/* Global View Toggle & Admin Login */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <ViewModeToggle
+                    mode={layoutMode}
+                    onChange={handleGlobalLayoutChange}
+                    label="View"
+                  />
+                  {isAdmin ? (
+                    <>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-extrabold">
+                        <Icons.Unlock className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Admin Active</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleAdminLogout}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold transition"
+                      >
+                        <Icons.LogOut className="w-3.5 h-3.5" />
+                        <span>Logout</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleOpenAdminModal}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold shadow-xs transition"
+                    >
+                      <Icons.Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Admin Login</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 3-Step Primary Navigation Tabs */}
+              <nav className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 w-full">
+                <button
+                  type="button"
+                  onClick={() => setActiveView('evaluators')}
+                  className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                    activeView === 'evaluators'
+                      ? 'bg-white text-indigo-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Icons.UserCheck className="w-4 h-4" />
+                  <span>1. Evaluators</span>
+                  <span className="px-1.5 py-0.5 text-[11px] rounded-full bg-slate-200/80 text-slate-700">
+                    {evaluatorsList.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!activeEvaluator && evaluatorsList.length > 0) {
+                      setActiveEvaluator(evaluatorsList[0]);
+                    }
+                    setActiveView('workspace');
+                  }}
+                  className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                    activeView === 'workspace'
+                      ? 'bg-white text-indigo-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Icons.ClipboardCheck className="w-4 h-4" />
+                  <span>2. Grading Form</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView('results')}
+                  className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                    activeView === 'results'
+                      ? 'bg-white text-indigo-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Icons.BarChart3 className="w-4 h-4" />
+                  <span>3. Names &amp; Avg</span>
+                  {evaluations.length > 0 && (
+                    <span className="px-1.5 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-700">
+                      {evaluations.length}
+                    </span>
+                  )}
+                </button>
+              </nav>
+            </div>
+          </header>
+
+          {/* Toast Notification Banner */}
+          {toast && (
+            <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md">
+              <div
+                className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${
+                  toast.type === 'error'
+                    ? 'bg-rose-600 text-white border-rose-700'
+                    : toast.type === 'info'
+                    ? 'bg-slate-800 text-white border-slate-700'
+                    : 'bg-emerald-600 text-white border-emerald-700'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {toast.type === 'error' ? (
+                    <Icons.AlertCircle className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <Icons.CheckCircle2 className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{toast.message}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setToast(null)}
+                  className="p-1 rounded-lg hover:bg-white/20"
+                >
+                  <Icons.X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content */}
+          <main className="max-w-5xl mx-auto px-3 sm:px-4 pt-5 space-y-5">
+            {/* VIEW 1: EVALUATORS LIST */}
+            {activeView === 'evaluators' && (
+              <div className="space-y-5">
+                <section className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-1.5">
+                        <Icons.ShieldCheck className="w-3.5 h-3.5" />
+                        Step 1: Select or Manage Evaluators
+                      </span>
+                      <h2 className="text-xl font-extrabold text-slate-900">
+                        Evaluators List
+                      </h2>
+                      <p className="text-sm text-slate-500">
+                        Tap any Evaluator below to open the Song &amp; Choir Grading workspace inside.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <ViewModeToggle
+                        mode={layoutMode}
+                        onChange={handleGlobalLayoutChange}
+                      />
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openCrudModal(
+                              'add',
+                              'evaluator',
+                              'Evaluator',
+                              '',
+                              'e.g., Pastor John / Judge 4'
+                            )
+                          }
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-bold shadow-md shadow-indigo-200 transition"
+                        >
+                          <Icons.Plus className="w-4 h-4" />
+                          <span>Add Evaluator</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <Icons.Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={evaluatorSearch}
+                      onChange={(e) => setEvaluatorSearch(e.target.value)}
+                      placeholder="Search evaluator by name..."
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                    />
+                  </div>
+                </section>
+
+                {visibleEvaluators.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-3">
+                    <Icons.UserCheck className="w-10 h-10 text-slate-300 mx-auto" />
+                    <h3 className="font-bold text-slate-800">No Evaluators Found</h3>
+                    <p className="text-sm text-slate-500">
+                      {isAdmin
+                        ? 'Add an Evaluator to begin grading songs and teams.'
+                        : 'No evaluators match your search.'}
+                    </p>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openCrudModal('add', 'evaluator', 'Evaluator', '', 'Enter Evaluator name...')
+                        }
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold"
+                      >
+                        <Icons.Plus className="w-4 h-4" />
+                        <span>Add Evaluator</span>
+                      </button>
+                    )}
+                  </div>
+                ) : layoutMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {visibleEvaluators.map((evName) => {
+                      const evSubmissions = evaluations.filter(
+                        (e) => e.evaluator === evName
+                      );
+                      const ratedNamesCount = new Set(
+                        evSubmissions.map((e) => e.name)
+                      ).size;
+                      const avgGiven =
+                        evSubmissions.length > 0
+                          ? (
+                              evSubmissions.reduce((acc, item) => acc + item.total, 0) /
+                              evSubmissions.length
+                            ).toFixed(1)
+                          : '—';
+
+                      return (
+                        <div
+                          key={evName}
+                          className="bg-white rounded-2xl border border-slate-200 hover:border-indigo-400 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+                        >
+                          <div
+                            onClick={() => handleSelectEvaluatorCard(evName)}
+                            className="p-5 cursor-pointer space-y-3 flex-1"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="w-11 h-11 rounded-2xl bg-indigo-50 group-hover:bg-indigo-600 text-indigo-600 group-hover:text-white flex items-center justify-center font-black text-lg transition-colors shrink-0">
+                                {evName.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
+                                <span>Open Grading</span>
+                                <Icons.ArrowRight className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+
+                            <div>
+                              <h3 className="text-lg font-extrabold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                                {evName}
+                              </h3>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {evSubmissions.length}{' '}
+                                {evSubmissions.length === 1 ? 'entry' : 'entries'} •{' '}
+                                {ratedNamesCount}{' '}
+                                {ratedNamesCount === 1 ? 'team/name' : 'teams/names'} rated • Avg:{' '}
+                                <strong className="text-slate-700">{avgGiven}</strong>
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectEvaluatorCard(evName)}
+                              className="text-xs font-bold text-indigo-700 hover:underline"
+                            >
+                              Enter Marks →
+                            </button>
+                            {isAdmin && (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openCrudModal('edit', 'evaluator', 'Evaluator', evName);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-slate-700 hover:text-amber-800 text-xs font-semibold transition"
+                                >
+                                  <Icons.Edit3 className="w-3 h-3" />
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openCrudModal('remove', 'evaluator', 'Evaluator', evName);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-rose-600 text-xs font-semibold transition"
+                                >
+                                  <Icons.Trash2 className="w-3 h-3" />
+                                  <span>Remove</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="hidden md:grid md:grid-cols-12 px-5 py-3 bg-slate-100 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      <div className="col-span-5">Evaluator Name</div>
+                      <div className="col-span-2 text-center">Entries Graded</div>
+                      <div className="col-span-2 text-center">Teams / Names</div>
+                      <div className="col-span-3 text-right">Actions</div>
+                    </div>
+                    <div className="divide-y divide-slate-100">
+                      {visibleEvaluators.map((evName, idx) => {
+                        const evSubmissions = evaluations.filter(
+                          (e) => e.evaluator === evName
+                        );
+                        const ratedNamesCount = new Set(
+                          evSubmissions.map((e) => e.name)
+                        ).size;
+                        const avgGiven =
+                          evSubmissions.length > 0
+                            ? (
+                                evSubmissions.reduce((acc, item) => acc + item.total, 0) /
+                                evSubmissions.length
+                              ).toFixed(1)
+                            : '—';
+
+                        return (
+                          <div
+                            key={evName}
+                            onClick={() => handleSelectEvaluatorCard(evName)}
+                            className="px-4 sm:px-5 py-3.5 hover:bg-indigo-50/40 transition-colors cursor-pointer flex flex-col md:grid md:grid-cols-12 md:items-center gap-3"
+                          >
+                            <div className="md:col-span-5 flex items-center gap-3">
+                              <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0">
+                                {idx + 1}
+                              </span>
+                              <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 font-black text-sm flex items-center justify-center shrink-0">
+                                {evName.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-extrabold text-slate-900 text-sm sm:text-base">
+                                  {evName}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  Avg Given Score: <strong>{avgGiven}</strong>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="md:col-span-2 flex md:justify-center items-center gap-2 text-xs">
+                              <span className="md:hidden text-slate-400 font-semibold">
+                                Entries:
+                              </span>
+                              <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-bold">
+                                {evSubmissions.length}{' '}
+                                {evSubmissions.length === 1 ? 'entry' : 'entries'}
+                              </span>
+                            </div>
+
+                            <div className="md:col-span-2 flex md:justify-center items-center gap-2 text-xs">
+                              <span className="md:hidden text-slate-400 font-semibold">
+                                Teams Rated:
+                              </span>
+                              <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold">
+                                {ratedNamesCount}{' '}
+                                {ratedNamesCount === 1 ? 'team' : 'teams'}
+                              </span>
+                            </div>
+
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="md:col-span-3 flex items-center justify-end gap-1.5"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => handleSelectEvaluatorCard(evName)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition"
+                              >
+                                <span>Open</span>
+                                <Icons.ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                              {isAdmin && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openCrudModal('edit', 'evaluator', 'Evaluator', evName)
+                                    }
+                                    className="p-1.5 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-slate-700 hover:text-amber-800 transition"
+                                    title="Edit Evaluator"
+                                  >
+                                    <Icons.Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openCrudModal('remove', 'evaluator', 'Evaluator', evName)
+                                    }
+                                    className="p-1.5 rounded-lg bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-rose-600 transition"
+                                    title="Remove Evaluator"
+                                  >
+                                    <Icons.Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* VIEW 2: GRADING WORKSPACE */}
+            {activeView === 'workspace' && (
+              <div className="space-y-5">
+                <section className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-md space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setActiveView('evaluators')}
+                        className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition"
+                        title="Back to Evaluators List"
+                      >
+                        <Icons.ArrowLeft className="w-5 h-5" />
+                      </button>
+                      <div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">
+                          Active Evaluator Workspace
+                        </div>
+                        <h2 className="text-lg sm:text-xl font-extrabold flex items-center gap-2">
+                          <span>{activeEvaluator || 'Select an Evaluator'}</span>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                            {activeEvaluatorSubmissions.length} entries saved
+                          </span>
+                        </h2>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <select
+                        value={activeEvaluator}
+                        onChange={(e) => setActiveEvaluator(e.target.value)}
+                        className="px-3 py-2 rounded-xl bg-white/15 border border-white/25 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-white"
+                      >
+                        <option value="" className="text-slate-900">
+                          -- Switch Evaluator --
+                        </option>
+                        {evaluatorsList.map((ev) => (
+                          <option key={ev} value={ev} className="text-slate-900">
+                            {ev}
+                          </option>
+                        ))}
+                      </select>
+
+                      {isAdmin && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openCrudModal('add', 'evaluator', 'Evaluator', '', 'New Evaluator Name')
+                            }
+                            className="px-2.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold flex items-center gap-1"
+                          >
+                            <Icons.Plus className="w-3.5 h-3.5" />
+                            <span>Add</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openCrudModal('edit', 'evaluator', 'Evaluator', activeEvaluator)
+                            }
+                            disabled={!activeEvaluator}
+                            className="px-2.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 disabled:opacity-40 text-white text-xs font-bold flex items-center gap-1"
+                          >
+                            <Icons.Edit3 className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openCrudModal('remove', 'evaluator', 'Evaluator', activeEvaluator)
+                            }
+                            disabled={!activeEvaluator}
+                            className="px-2.5 py-2 rounded-xl bg-rose-500/80 hover:bg-rose-600 disabled:opacity-40 text-white text-xs font-bold flex items-center gap-1"
+                          >
+                            <Icons.Trash2 className="w-3.5 h-3.5" />
+                            <span>Remove</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
+                {editingEvalId && (
+                  <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-amber-900 text-sm font-medium">
+                      <Icons.Edit3 className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>
+                        Editing existing entry for <strong>{selectedName}</strong> (Song #{songNumber})
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingEvalId(null);
+                        setMarks(initialMarks);
+                      }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-200/80 text-amber-950 hover:bg-amber-200"
+                    >
+                      Cancel Edit
+                    </button>
+                  </div>
+                )}
+
+                {/* Song, Name, Status, Zion, Branch */}
+                <section className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-5 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                      <Icons.Sparkles className="w-4 h-4 text-indigo-600" />
+                      <span>Song, Team/Name &amp; Status Details</span>
+                    </h3>
+                    <span className="text-xs text-slate-400">
+                      {isAdmin
+                        ? 'Admin Mode: Add, Edit & Remove enabled'
+                        : 'Select Song, Name, Status, Zion & Branch'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                        New Song (Number 1 to 485)
+                      </label>
+                      <div className="flex gap-2">
+                        <div className="relative w-28 shrink-0">
+                          <Icons.Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="number"
+                            min={1}
+                            max={485}
+                            value={songSearch}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setSongSearch(val);
+                              const num = parseInt(val, 10);
+                              if (num >= 1 && num <= 485) {
+                                setSongNumber(num);
+                              }
+                            }}
+                            placeholder="1-485"
+                            className="w-full pl-8 pr-2 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                          />
+                        </div>
+                        <select
+                          value={songNumber}
+                          onChange={(e) => {
+                            setSongNumber(Number(e.target.value));
+                            setSongSearch('');
+                          }}
+                          className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                        >
+                          {filteredSongs.length > 0 ? (
+                            filteredSongs.map((s) => (
+                              <option key={s.number} value={s.number}>
+                                {s.label}
+                              </option>
+                            ))
+                          ) : (
+                            <option value={songNumber}>Song #{songNumber}</option>
+                          )}
+                        </select>
+                      </div>
+                    </div>
+
+                    <ManageableSelect
+                      label="Name (Person / Group / Team)"
+                      icon={Icons.Users}
+                      value={selectedName}
+                      onChange={setSelectedName}
+                      options={namesList}
+                      placeholder="-- Select Name / Team --"
+                      isAdmin={isAdmin}
+                      onAdd={() =>
+                        openCrudModal(
+                          'add',
+                          'name',
+                          'Name (Person / Group / Team)',
+                          '',
+                          'e.g., Gospel Choir / Team B / Ravi'
+                        )
+                      }
+                      onEdit={() =>
+                        openCrudModal('edit', 'name', 'Name (Person / Group / Team)', selectedName)
+                      }
+                      onRemove={() =>
+                        openCrudModal('remove', 'name', 'Name (Person / Group / Team)', selectedName)
+                      }
+                    />
+
+                    <ManageableSelect
+                      label="Status (Assigned to Name)"
+                      icon={Icons.Tag}
+                      value={selectedStatus}
+                      onChange={(val) => handleAssignStatusToName(selectedName, val)}
+                      options={statusesList}
+                      placeholder="-- Select Status --"
+                      isAdmin={isAdmin}
+                      badgeSlot={
+                        selectedStatus && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeStyle(
+                              selectedStatus
+                            )}`}
+                          >
+                            {selectedStatus}
+                          </span>
+                        )
+                      }
+                      onAdd={() =>
+                        openCrudModal(
+                          'add',
+                          'status',
+                          'Status',
+                          '',
+                          'e.g., Selected / Winner / Round 2'
+                        )
+                      }
+                      onEdit={() =>
+                        openCrudModal('edit', 'status', 'Status', selectedStatus)
+                      }
+                      onRemove={() =>
+                        openCrudModal('remove', 'status', 'Status', selectedStatus)
+                      }
+                    />
+
+                    <ManageableSelect
+                      label="Zion"
+                      icon={Icons.MapPin}
+                      value={selectedZion}
+                      onChange={setSelectedZion}
+                      options={zionsList}
+                      placeholder="-- Select Zion --"
+                      isAdmin={isAdmin}
+                      onAdd={() =>
+                        openCrudModal('add', 'zion', 'Zion', '', 'e.g., Vijayawada / Kakinada')
+                      }
+                      onEdit={() => openCrudModal('edit', 'zion', 'Zion', selectedZion)}
+                      onRemove={() => openCrudModal('remove', 'zion', 'Zion', selectedZion)}
+                    />
+
+                    <div className="md:col-span-2">
+                      <ManageableSelect
+                        label="Branch"
+                        icon={Icons.GitBranch}
+                        value={selectedBranch}
+                        onChange={setSelectedBranch}
+                        options={branchesList}
+                        placeholder="-- Select Branch --"
+                        isAdmin={isAdmin}
+                        onAdd={() =>
+                          openCrudModal('add', 'branch', 'Branch', '', 'e.g., North Branch / Central')
+                        }
+                        onEdit={() => openCrudModal('edit', 'branch', 'Branch', selectedBranch)}
+                        onRemove={() => openCrudModal('remove', 'branch', 'Branch', selectedBranch)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live Summary Card for Selected Name */}
+                  {selectedName && selectedNameLiveAnalytics && (
+                    <div className="mt-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-white to-emerald-50/70 border border-indigo-200 p-4 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-slate-900 text-base">
+                            {selectedName}
+                          </span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadgeStyle(
+                              selectedNameLiveAnalytics.status
+                            )}`}
+                          >
+                            Status: {selectedNameLiveAnalytics.status}
+                          </span>
+                        </div>
+
+                        <div className="text-xs font-bold text-indigo-700 bg-indigo-100/80 px-3 py-1 rounded-full">
+                          Evaluators Given Marks: {selectedNameLiveAnalytics.evaluatorCount}{' '}
+                          ({selectedNameLiveAnalytics.totalSubmissions} total entries)
+                        </div>
+                      </div>
+
+                      {selectedNameLiveAnalytics.evaluatorsList.length > 0 && (
+                        <div className="text-xs text-slate-600">
+                          Rated by:{' '}
+                          <strong className="text-slate-800">
+                            {selectedNameLiveAnalytics.evaluatorsList.join(', ')}
+                          </strong>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                        <div className="bg-white rounded-xl border border-slate-200 p-2.5 text-center">
+                          <div className="text-[10px] font-bold uppercase text-slate-400">
+                            Current Avg Marks
+                          </div>
+                          <div className="text-base font-black text-slate-800">
+                            {selectedNameLiveAnalytics.totalSubmissions > 0
+                              ? `${selectedNameLiveAnalytics.existingAvg} / 100`
+                              : '—'}
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl border border-slate-200 p-2.5 text-center">
+                          <div className="text-[10px] font-bold uppercase text-slate-400">
+                            Current Average %
+                          </div>
+                          <div className="text-base font-black text-slate-800">
+                            {selectedNameLiveAnalytics.totalSubmissions > 0
+                              ? `${selectedNameLiveAnalytics.existingPercent}%`
+                              : '—'}
+                          </div>
+                        </div>
+
+                        <div className="bg-indigo-600 text-white rounded-xl p-2.5 text-center shadow-xs">
+                          <div className="text-[10px] font-bold uppercase text-indigo-200">
+                            New Avg (With Current)
+                          </div>
+                          <div className="text-base font-black">
+                            {selectedNameLiveAnalytics.projectedAvg} / 100
+                          </div>
+                        </div>
+
+                        <div className="bg-emerald-600 text-white rounded-xl p-2.5 text-center shadow-xs">
+                          <div className="text-[10px] font-bold uppercase text-emerald-100">
+                            New Average %
+                          </div>
+                          <div className="text-base font-black">
+                            {selectedNameLiveAnalytics.projectedPercent}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                {/* 9 Grading Categories */}
+                <section className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                  <div className="px-4 py-3.5 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🎵</span>
+                      <h3 className="font-bold text-sm sm:text-base">
+                        Choir Grading Categories (1 to Max)
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700">
+                        <button
+                          type="button"
+                          onClick={() => setCategoriesLayout('list')}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition ${
+                            categoriesLayout === 'list'
+                              ? 'bg-indigo-600 text-white'
+                              : 'text-slate-300 hover:text-white'
+                          }`}
+                        >
+                          <Icons.List className="w-3.5 h-3.5" />
+                          <span>List</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCategoriesLayout('grid')}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition ${
+                            categoriesLayout === 'grid'
+                              ? 'bg-indigo-600 text-white'
+                              : 'text-slate-300 hover:text-white'
+                          }`}
+                        >
+                          <Icons.LayoutGrid className="w-3.5 h-3.5" />
+                          <span>Grid</span>
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMarks(initialMarks);
+                          setEditingEvalId(null);
+                          showToast('Marks cleared to 0.', 'info');
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+                      >
+                        <Icons.RotateCcw className="w-3.5 h-3.5" />
+                        <span>Reset</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {categoriesLayout === 'list' ? (
+                    <>
+                      <div className="grid grid-cols-12 px-4 py-2.5 bg-slate-100 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-600">
+                        <div className="col-span-7 sm:col-span-8">Category</div>
+                        <div className="col-span-2 text-center">Max</div>
+                        <div className="col-span-3 sm:col-span-2 text-right">Marks</div>
+                      </div>
+
+                      <div className="divide-y divide-slate-100">
+                        {GRADING_CATEGORIES.map((cat) => {
+                          const val = marks[cat.id] || 0;
+                          const numberOptions = Array.from(
+                            { length: cat.max + 1 },
+                            (_, idx) => idx
+                          );
+
+                          return (
+                            <div
+                              key={cat.id}
+                              className="px-4 py-3 hover:bg-slate-50/80 transition-colors"
+                            >
+                              <div className="grid grid-cols-12 items-center gap-2">
+                                <div className="col-span-7 sm:col-span-8 flex items-center gap-2.5">
+                                  <span className="text-xl shrink-0">{cat.icon}</span>
+                                  <span className="font-semibold text-sm sm:text-base text-slate-800 leading-snug">
+                                    {cat.label}
+                                  </span>
+                                </div>
+
+                                <div className="col-span-2 text-center">
+                                  <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-xs font-bold text-slate-600">
+                                    {cat.max}
+                                  </span>
+                                </div>
+
+                                <div className="col-span-3 sm:col-span-2 flex justify-end">
+                                  <select
+                                    aria-label={`${cat.label} marks`}
+                                    value={val}
+                                    onChange={(e) =>
+                                      setMarks((prev) => ({
+                                        ...prev,
+                                        [cat.id]: Number(e.target.value),
+                                      }))
+                                    }
+                                    className={`w-full max-w-[84px] px-2.5 py-2 rounded-xl border text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
+                                      val > 0
+                                        ? 'bg-indigo-50 border-indigo-400 text-indigo-800'
+                                        : 'bg-white border-slate-300 text-slate-700'
+                                    }`}
+                                  >
+                                    {numberOptions.map((num) => (
+                                      <option key={num} value={num}>
+                                        {num}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="mt-2.5 flex items-center gap-1 overflow-x-auto pb-1">
+                                <span className="text-[11px] font-medium text-slate-400 mr-1 shrink-0">
+                                  1–{cat.max}:
+                                </span>
+                                {Array.from({ length: cat.max }, (_, idx) => idx + 1).map(
+                                  (num) => (
+                                    <button
+                                      key={num}
+                                      type="button"
+                                      onClick={() =>
+                                        setMarks((prev) => ({ ...prev, [cat.id]: num }))
+                                      }
+                                      className={`min-w-[28px] h-7 px-1.5 rounded-lg text-xs font-bold transition shrink-0 ${
+                                        val === num
+                                          ? 'bg-indigo-600 text-white shadow-xs'
+                                          : 'bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700'
+                                      }`}
+                                    >
+                                      {num}
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 bg-slate-50/60">
+                      {GRADING_CATEGORIES.map((cat) => {
+                        const val = marks[cat.id] || 0;
+                        const numberOptions = Array.from(
+                          { length: cat.max + 1 },
+                          (_, idx) => idx
+                        );
+
+                        return (
+                          <div
+                            key={cat.id}
+                            className={`rounded-2xl border p-3.5 transition-all flex flex-col justify-between gap-3 ${
+                              val > 0
+                                ? 'bg-indigo-50/40 border-indigo-300 shadow-xs'
+                                : 'bg-white border-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl shrink-0">{cat.icon}</span>
+                                <div>
+                                  <h4 className="font-bold text-sm text-slate-900 leading-snug">
+                                    {cat.label}
+                                  </h4>
+                                  <span className="text-[11px] font-semibold text-slate-500">
+                                    Max: {cat.max} marks
+                                  </span>
+                                </div>
+                              </div>
+
+                              <select
+                                aria-label={`${cat.label} marks`}
+                                value={val}
+                                onChange={(e) =>
+                                  setMarks((prev) => ({
+                                    ...prev,
+                                    [cat.id]: Number(e.target.value),
+                                  }))
+                                }
+                                className={`w-16 px-2 py-1.5 rounded-xl border text-sm font-extrabold text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                                  val > 0
+                                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                                    : 'bg-slate-50 border-slate-300 text-slate-700'
+                                }`}
+                              >
+                                {numberOptions.map((num) => (
+                                  <option key={num} value={num} className="text-slate-900 bg-white">
+                                    {num}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100">
+                              {Array.from({ length: cat.max }, (_, idx) => idx + 1).map(
+                                (num) => (
+                                  <button
+                                    key={num}
+                                    type="button"
+                                    onClick={() =>
+                                      setMarks((prev) => ({ ...prev, [cat.id]: num }))
+                                    }
+                                    className={`min-w-[26px] h-6 px-1 rounded-md text-[11px] font-bold transition ${
+                                      val === num
+                                        ? 'bg-indigo-600 text-white shadow-xs'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700'
+                                    }`}
+                                  >
+                                    {num}
+                                  </button>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Total Marks & Grade Summary Footer */}
+                  <div className="p-4 sm:p-5 bg-gradient-to-r from-indigo-50 via-white to-slate-50 border-t border-slate-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Total Marks ({activeEvaluator})
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl sm:text-4xl font-black text-indigo-700">
+                            {totalMarks}
+                          </span>
+                          <span className="text-base font-bold text-slate-400">
+                            / 100 ({totalMarks}%)
+                          </span>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-bold ${currentGrade.badgeBg}`}
+                      >
+                        <span className="text-xl">{currentGrade.medal}</span>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wider opacity-75">
+                            Grade Level
+                          </div>
+                          <div>{currentGrade.label}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${currentGrade.barColor}`}
+                        style={{ width: `${Math.min(100, totalMarks)}%` }}
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveEvaluation}
+                      className="w-full py-3.5 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-base shadow-md shadow-indigo-200 flex items-center justify-center gap-2 transition"
+                    >
+                      <Icons.Check className="w-5 h-5" />
+                      <span>
+                        {editingEvalId
+                          ? 'Update Evaluation Marks'
+                          : `Save Marks by ${activeEvaluator} (${totalMarks}/100)`}
+                      </span>
+                    </button>
+                  </div>
+                </section>
+
+                {/* Recent Entries by Active Evaluator */}
+                {activeEvaluatorSubmissions.length > 0 && (
+                  <section className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-5 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <span>Entries Submitted by {activeEvaluator}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold">
+                          {activeEvaluatorSubmissions.length} total
+                        </span>
+                      </h3>
+                      <ViewModeToggle
+                        mode={recentEntriesLayout}
+                        onChange={setRecentEntriesLayout}
+                      />
+                    </div>
+
+                    {recentEntriesLayout === 'list' ? (
+                      <div className="divide-y divide-slate-100">
+                        {activeEvaluatorSubmissions.map((entry) => (
+                          <div
+                            key={entry.id}
+                            className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold text-xs">
+                                Song #{entry.songNumber}
+                              </span>
+                              <span className="font-bold text-slate-900">{entry.name}</span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeStyle(
+                                  nameStatusMap[entry.name] || 'Pending'
+                                )}`}
+                              >
+                                {nameStatusMap[entry.name] || 'Pending'}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                • {entry.zion} ({entry.branch})
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                              <span className="font-black text-indigo-700 mr-2">
+                                {entry.total}/100
+                              </span>
+                              {isAdmin && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditEvaluation(entry)}
+                                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-indigo-50 text-slate-700"
+                                    title="Edit"
+                                  >
+                                    <Icons.Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteEvaluation(entry.id)}
+                                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 text-rose-600"
+                                    title="Delete"
+                                  >
+                                    <Icons.Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                        {activeEvaluatorSubmissions.map((entry) => {
+                          const entryGrade = getGradeDetails(entry.total);
+                          return (
+                            <div
+                              key={entry.id}
+                              className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 flex flex-col justify-between gap-3"
+                            >
+                              <div className="space-y-1.5">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold text-xs">
+                                    Song #{entry.songNumber}
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeStyle(
+                                      nameStatusMap[entry.name] || 'Pending'
+                                    )}`}
+                                  >
+                                    {nameStatusMap[entry.name] || 'Pending'}
+                                  </span>
+                                </div>
+                                <h4 className="font-extrabold text-slate-900 text-base">
+                                  {entry.name}
+                                </h4>
+                                <p className="text-xs text-slate-500">
+                                  {entry.zion} • {entry.branch}
+                                </p>
+                              </div>
+
+                              <div className="pt-2.5 border-t border-slate-200/80 flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-lg font-black text-indigo-700">
+                                    {entry.total}/100
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-500">
+                                    ({entryGrade.medal} {entryGrade.short})
+                                  </span>
+                                </div>
+
+                                {isAdmin && (
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleEditEvaluation(entry)}
+                                      className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-indigo-50 text-slate-700"
+                                      title="Edit"
+                                    >
+                                      <Icons.Edit3 className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteEvaluation(entry.id)}
+                                      className="p-1.5 rounded-lg bg-white border border-slate-200 hover:bg-rose-50 text-rose-600"
+                                      title="Delete"
+                                    >
+                                      <Icons.Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {/* Grade Levels Legend */}
+                <section className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-5">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-3">
+                    <Icons.Trophy className="w-4 h-4 text-amber-500" />
+                    <span>Grade Levels Reference</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50/70 border border-amber-200/80">
+                      <span>🥇</span>
+                      <span className="font-bold text-slate-700">90–100</span>
+                      <span className="text-slate-400">→</span>
+                      <span className="font-semibold text-amber-900">Excellent / A+</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100/80 border border-slate-200">
+                      <span>🥈</span>
+                      <span className="font-bold text-slate-700">80–89</span>
+                      <span className="text-slate-400">→</span>
+                      <span className="font-semibold text-slate-800">Very Good / A</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-50/70 border border-orange-200/80">
+                      <span>🥉</span>
+                      <span className="font-bold text-slate-700">70–79</span>
+                      <span className="text-slate-400">→</span>
+                      <span className="font-semibold text-orange-900">Good / B</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50/70 border border-blue-200/80">
+                      <span>⭐</span>
+                      <span className="font-bold text-slate-700">60–69</span>
+                      <span className="text-slate-400">→</span>
+                      <span className="font-semibold text-blue-900">Satisfactory / C</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-rose-50/70 border border-rose-200/80 sm:col-span-2 lg:col-span-2">
+                      <span>📌</span>
+                      <span className="font-bold text-slate-700">Below 60</span>
+                      <span className="text-slate-400">→</span>
+                      <span className="font-semibold text-rose-900">Needs Improvement / D</span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* VIEW 3: NAMES, STATUS FILTERS, EVALUATOR COUNT & COMBINED AVERAGES */}
+            {activeView === 'results' && (
+              <div className="space-y-5">
+                <section className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-5 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h2 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                        <Icons.Award className="w-5 h-5 text-indigo-600" />
+                        <span>Names Status, Evaluator Count &amp; Combined Averages</span>
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        Shows each Name&apos;s Status, how many Evaluators gave marks, Combined Total, Average Marks &amp; %
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <ViewModeToggle
+                        mode={layoutMode}
+                        onChange={handleGlobalLayoutChange}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleExportCSV}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-xs transition"
+                      >
+                        <Icons.Download className="w-4 h-4" />
+                        <span>Export CSV</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Status Filter Bar */}
+                  <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                        <Icons.Layers className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Filter by Status</span>
+                      </span>
+
+                      {isAdmin && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openCrudModal('add', 'status', 'Status', '', 'e.g., Winner / Round 2')
+                            }
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold"
+                          >
+                            <Icons.Plus className="w-3 h-3" />
+                            <span>Add Status</span>
+                          </button>
+                          {filterStatus !== 'ALL' && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openCrudModal('edit', 'status', 'Status', filterStatus)
+                                }
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-xs font-bold"
+                              >
+                                <Icons.Edit3 className="w-3 h-3" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  openCrudModal('remove', 'status', 'Status', filterStatus)
+                                }
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-300 text-rose-700 text-xs font-bold"
+                              >
+                                <Icons.Trash2 className="w-3 h-3" />
+                                <span>Remove</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setFilterStatus('ALL')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                          filterStatus === 'ALL'
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        All Statuses ({namesList.length})
+                      </button>
+                      {statusesList.map((st) => {
+                        const countForStatus = namesList.filter(
+                          (n) => (nameStatusMap[n] || 'Pending') === st
+                        ).length;
+                        const active = filterStatus === st;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => setFilterStatus(st)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                              active
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                            }`}
+                          >
+                            {st} ({countForStatus})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Additional Filters */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-3 border-t border-slate-100">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                        Name / Team
+                      </label>
+                      <select
+                        value={filterName}
+                        onChange={(e) => setFilterName(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"
+                      >
+                        <option value="ALL">All Names</option>
+                        {namesList.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                        Evaluator
+                      </label>
+                      <select
+                        value={filterEvaluator}
+                        onChange={(e) => setFilterEvaluator(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"
+                      >
+                        <option value="ALL">All Evaluators</option>
+                        {evaluatorsList.map((ev) => (
+                          <option key={ev} value={ev}>
+                            {ev}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                        Zion
+                      </label>
+                      <select
+                        value={filterZion}
+                        onChange={(e) => setFilterZion(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"
+                      >
+                        <option value="ALL">All Zions</option>
+                        {zionsList.map((z) => (
+                          <option key={z} value={z}>
+                            {z}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                        Branch
+                      </label>
+                      <select
+                        value={filterBranch}
+                        onChange={(e) => setFilterBranch(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"
+                      >
+                        <option value="ALL">All Branches</option>
+                        {branchesList.map((b) => (
+                          <option key={b} value={b}>
+                            {b}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                        Song # (1–485)
+                      </label>
+                      <input
+                        type="text"
+                        value={filterSong}
+                        onChange={(e) => setFilterSong(e.target.value)}
+                        placeholder="e.g. 125"
+                        className="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  {(filterStatus !== 'ALL' ||
+                    filterName !== 'ALL' ||
+                    filterEvaluator !== 'ALL' ||
+                    filterZion !== 'ALL' ||
+                    filterBranch !== 'ALL' ||
+                    filterSong.trim() !== '') && (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterStatus('ALL');
+                          setFilterName('ALL');
+                          setFilterEvaluator('ALL');
+                          setFilterZion('ALL');
+                          setFilterBranch('ALL');
+                          setFilterSong('');
+                        }}
+                        className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1"
+                      >
+                        <Icons.Filter className="w-3.5 h-3.5" />
+                        <span>Reset All Filters</span>
+                      </button>
+                    </div>
+                  )}
+                </section>
+
+                {/* Aggregated Results */}
+                {aggregatedNamesSummary.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center space-y-3">
+                    <Icons.BarChart3 className="w-10 h-10 text-slate-300 mx-auto" />
+                    <h3 className="font-bold text-slate-800">No Matching Records Found</h3>
+                    <p className="text-sm text-slate-500 max-w-md mx-auto">
+                      Adjust your Status/Name filters or select an Evaluator to input marks.
+                    </p>
+                  </div>
+                ) : layoutMode === 'grid' ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {aggregatedNamesSummary.map((group, idx) => {
+                      const isExpanded = expandedNameCard === group.name;
+
+                      return (
+                        <div
+                          key={group.name}
+                          className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col justify-between"
+                        >
+                          <div className="p-4 sm:p-5 space-y-4">
+                            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-sm flex items-center justify-center shrink-0">
+                                  #{idx + 1}
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="text-lg font-extrabold text-slate-900">
+                                      {group.name}
+                                    </h3>
+                                    <span
+                                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${getStatusBadgeStyle(
+                                        group.status
+                                      )}`}
+                                    >
+                                      {group.status}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                                    <span>
+                                      <strong>Zion:</strong> {group.zions}
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                      <strong>Branch:</strong> {group.branches}
+                                    </span>
+                                    {group.songs.length > 0 && (
+                                      <>
+                                        <span>•</span>
+                                        <span>
+                                          <strong>Songs:</strong>{' '}
+                                          {group.songs.map((s) => `#${s}`).join(', ')}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 self-start shrink-0">
+                                <select
+                                  aria-label={`Status for ${group.name}`}
+                                  value={group.status}
+                                  onChange={(e) =>
+                                    handleAssignStatusToName(group.name, e.target.value)
+                                  }
+                                  className="px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                                  {statusesList.map((st) => (
+                                    <option key={st} value={st}>
+                                      {st}
+                                    </option>
+                                  ))}
+                                </select>
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openCrudModal('add', 'status', 'Status', '', 'New Status...')
+                                    }
+                                    title="Add New Status"
+                                    className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700"
+                                  >
+                                    <Icons.Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                              <div className="px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                                <div className="text-[10px] font-bold uppercase text-slate-400">
+                                  Evaluators Rated
+                                </div>
+                                <div className="text-sm font-black text-slate-900">
+                                  {group.uniqueEvaluatorsCount}{' '}
+                                  <span className="text-xs font-semibold text-slate-500">
+                                    ({group.evalCount})
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
+                                <div className="text-[10px] font-bold uppercase text-slate-400">
+                                  Combined Total
+                                </div>
+                                <div className="text-sm font-black text-slate-900">
+                                  {group.totalScoreSum}{' '}
+                                  <span className="text-xs font-semibold text-slate-500">
+                                    / {group.evalCount * 100 || 100}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="px-3 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-center">
+                                <div className="text-[10px] font-bold uppercase text-indigo-600">
+                                  Average Marks
+                                </div>
+                                <div className="text-sm font-black text-indigo-800">
+                                  {group.evalCount > 0 ? `${group.avgMarks} / 100` : '—'}
+                                </div>
+                              </div>
+
+                              <div className="px-3 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                                <div className="text-[10px] font-bold uppercase text-emerald-600">
+                                  Average %
+                                </div>
+                                <div className="text-sm font-black text-emerald-800">
+                                  {group.evalCount > 0 ? `${group.avgPercent}%` : '—'}
+                                </div>
+                              </div>
+
+                              <div
+                                className={`col-span-2 px-3 py-2.5 rounded-xl border flex items-center justify-center gap-1.5 text-xs font-extrabold ${
+                                  group.gradeInfo
+                                    ? group.gradeInfo.badgeBg
+                                    : 'bg-slate-50 border-slate-200 text-slate-400'
+                                }`}
+                              >
+                                {group.gradeInfo ? (
+                                  <>
+                                    <span className="text-base">{group.gradeInfo.medal}</span>
+                                    <span>{group.gradeInfo.label}</span>
+                                  </>
+                                ) : (
+                                  <span>No Marks</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                              <div className="text-xs text-slate-600">
+                                {group.evaluators.length > 0 ? (
+                                  <>
+                                    Evaluators:{' '}
+                                    <strong className="text-slate-800">
+                                      {group.evaluators.join(', ')}
+                                    </strong>
+                                  </>
+                                ) : (
+                                  <span className="text-slate-400">
+                                    No evaluator marks submitted yet
+                                  </span>
+                                )}
+                              </div>
+
+                              {group.evalCount > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpandedNameCard(isExpanded ? null : group.name)
+                                  }
+                                  className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                                >
+                                  <span>
+                                    {isExpanded
+                                      ? 'Hide Breakdown'
+                                      : `View ${group.evalCount} Marks`}
+                                  </span>
+                                  {isExpanded ? (
+                                    <Icons.ChevronUp className="w-4 h-4" />
+                                  ) : (
+                                    <Icons.ChevronDown className="w-4 h-4" />
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {isExpanded && group.entries.length > 0 && (
+                            <div className="bg-slate-50 border-t border-slate-200 divide-y divide-slate-200/80">
+                              {group.entries.map((entry) => {
+                                const entryGrade = getGradeDetails(entry.total);
+                                return (
+                                  <div
+                                    key={entry.id}
+                                    className="p-3.5 flex flex-col gap-2 text-sm"
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold text-xs">
+                                          Song #{entry.songNumber}
+                                        </span>
+                                        <span className="font-bold text-slate-900 text-xs">
+                                          {entry.evaluator}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-black text-slate-900 text-xs">
+                                          {entry.total}/100 ({entryGrade.medal})
+                                        </span>
+                                        {isAdmin && (
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleEditEvaluation(entry)}
+                                              className="p-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-indigo-50"
+                                              title="Edit"
+                                            >
+                                              <Icons.Edit3 className="w-3.5 h-3.5" />
+                                            </button>
+                                            {confirmDeleteEvalId === entry.id ? (
+                                              <div className="flex items-center gap-1">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteEvaluation(entry.id)}
+                                                  className="px-2 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-bold"
+                                                >
+                                                  Yes
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConfirmDeleteEvalId(null)}
+                                                  className="px-2 py-1 rounded-lg bg-slate-200 text-slate-700 text-[11px] font-bold"
+                                                >
+                                                  No
+                                                </button>
+                                              </div>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={() => setConfirmDeleteEvalId(entry.id)}
+                                                className="p-1.5 rounded-lg bg-white border border-slate-300 text-rose-600 hover:bg-rose-50"
+                                                title="Delete"
+                                              >
+                                                <Icons.Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {GRADING_CATEGORIES.map((cat) => (
+                                        <span
+                                          key={cat.id}
+                                          className="text-[10px] px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600"
+                                        >
+                                          {cat.icon} {entry.marks[cat.id] ?? 0}/{cat.max}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                    <div className="hidden lg:grid lg:grid-cols-12 px-5 py-3 bg-slate-100 border-b border-slate-200 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      <div className="col-span-4">Rank &amp; Name / Team</div>
+                      <div className="col-span-2">Status</div>
+                      <div className="col-span-1 text-center">Evals</div>
+                      <div className="col-span-2 text-center">Avg Marks / %</div>
+                      <div className="col-span-1 text-center">Grade</div>
+                      <div className="col-span-2 text-right">Details</div>
+                    </div>
+
+                    <div className="divide-y divide-slate-200">
+                      {aggregatedNamesSummary.map((group, idx) => {
+                        const isExpanded = expandedNameCard === group.name;
+
+                        return (
+                          <div key={group.name} className="bg-white">
+                            <div className="px-4 sm:px-5 py-3.5 hover:bg-slate-50/90 transition-colors flex flex-col lg:grid lg:grid-cols-12 lg:items-center gap-3">
+                              <div className="lg:col-span-4 flex items-center gap-3">
+                                <span className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-black text-xs flex items-center justify-center shrink-0">
+                                  #{idx + 1}
+                                </span>
+                                <div className="min-w-0">
+                                  <div className="font-extrabold text-slate-900 text-sm sm:text-base truncate">
+                                    {group.name}
+                                  </div>
+                                  <div className="text-xs text-slate-500 truncate">
+                                    {group.zions} • {group.branches}
+                                    {group.songs.length > 0 &&
+                                      ` • Songs: ${group.songs.map((s) => `#${s}`).join(', ')}`}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="lg:col-span-2 flex items-center gap-1.5">
+                                <select
+                                  aria-label={`Status for ${group.name}`}
+                                  value={group.status}
+                                  onChange={(e) =>
+                                    handleAssignStatusToName(group.name, e.target.value)
+                                  }
+                                  className={`px-2.5 py-1 rounded-full text-xs font-bold border focus:outline-none focus:ring-2 focus:ring-indigo-500 ${getStatusBadgeStyle(
+                                    group.status
+                                  )}`}
+                                >
+                                  {statusesList.map((st) => (
+                                    <option
+                                      key={st}
+                                      value={st}
+                                      className="bg-white text-slate-900"
+                                    >
+                                      {st}
+                                    </option>
+                                  ))}
+                                </select>
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openCrudModal('add', 'status', 'Status', '', 'New Status...')
+                                    }
+                                    title="Add New Status"
+                                    className="p-1 rounded-md bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700"
+                                  >
+                                    <Icons.Plus className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="lg:col-span-1 flex lg:justify-center items-center gap-1.5 text-xs">
+                                <span className="lg:hidden text-slate-400 font-semibold">
+                                  Evaluators:
+                                </span>
+                                <span className="px-2 py-0.5 rounded-md bg-slate-100 font-extrabold text-slate-800">
+                                  {group.uniqueEvaluatorsCount}
+                                </span>
+                                <span className="text-slate-400 text-[11px]">
+                                  ({group.evalCount})
+                                </span>
+                              </div>
+
+                              <div className="lg:col-span-2 flex lg:justify-center items-center gap-2 text-xs">
+                                <span className="lg:hidden text-slate-400 font-semibold">
+                                  Average:
+                                </span>
+                                {group.evalCount > 0 ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 font-black">
+                                      {group.avgMarks}/100
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-black">
+                                      {group.avgPercent}%
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </div>
+
+                              <div className="lg:col-span-1 flex lg:justify-center items-center">
+                                {group.gradeInfo ? (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-extrabold ${group.gradeInfo.badgeBg}`}
+                                  >
+                                    <span>{group.gradeInfo.medal}</span>
+                                    <span>{group.gradeInfo.short}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-400">—</span>
+                                )}
+                              </div>
+
+                              <div className="lg:col-span-2 flex items-center justify-end">
+                                {group.evalCount > 0 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setExpandedNameCard(isExpanded ? null : group.name)
+                                    }
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition"
+                                  >
+                                    <span>{isExpanded ? 'Hide' : `Details (${group.evalCount})`}</span>
+                                    {isExpanded ? (
+                                      <Icons.ChevronUp className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <Icons.ChevronDown className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400">No entries</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {isExpanded && group.entries.length > 0 && (
+                              <div className="bg-slate-50 border-t border-slate-200 divide-y divide-slate-200/80">
+                                {group.entries.map((entry) => {
+                                  const entryGrade = getGradeDetails(entry.total);
+                                  return (
+                                    <div
+                                      key={entry.id}
+                                      className="px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
+                                    >
+                                      <div className="space-y-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold text-xs">
+                                            Song #{entry.songNumber}
+                                          </span>
+                                          <span className="font-bold text-slate-900">
+                                            Evaluator: {entry.evaluator}
+                                          </span>
+                                          <span className="text-xs text-slate-500">
+                                            • {entry.zion} ({entry.branch})
+                                          </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          {GRADING_CATEGORIES.map((cat) => (
+                                            <span
+                                              key={cat.id}
+                                              className="text-[11px] px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600"
+                                            >
+                                              {cat.icon} {entry.marks[cat.id] ?? 0}/{cat.max}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                                        <div className="text-right">
+                                          <div className="font-black text-slate-900">
+                                            {entry.total} / 100
+                                          </div>
+                                          <div className="text-xs font-semibold text-slate-500">
+                                            {entryGrade.medal} {entryGrade.short}
+                                          </div>
+                                        </div>
+
+                                        {isAdmin && (
+                                          <div className="flex items-center gap-1.5">
+                                            <button
+                                              type="button"
+                                              onClick={() => handleEditEvaluation(entry)}
+                                              className="p-2 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-indigo-50 hover:text-indigo-700"
+                                              title="Edit"
+                                            >
+                                              <Icons.Edit3 className="w-4 h-4" />
+                                            </button>
+
+                                            {confirmDeleteEvalId === entry.id ? (
+                                              <div className="flex items-center gap-1">
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleDeleteEvaluation(entry.id)}
+                                                  className="px-2 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold"
+                                                >
+                                                  Confirm
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setConfirmDeleteEvalId(null)}
+                                                  className="px-2 py-1.5 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold"
+                                                >
+                                                  Cancel
+                                                </button>
+                                              </div>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={() => setConfirmDeleteEvalId(entry.id)}
+                                                className="p-2 rounded-lg bg-white border border-slate-300 text-rose-600 hover:bg-rose-50"
+                                                title="Delete"
+                                              >
+                                                <Icons.Trash2 className="w-4 h-4" />
+                                              </button>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* Admin Login Modal */}
+          {adminModalOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden">
+                <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Icons.Lock className="w-4 h-4 text-amber-400" />
+                    <h3 className="font-bold text-base">Admin Login</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAdminModalOpen(false)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+                  >
+                    <Icons.X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAdminLoginSubmit} className="p-5 space-y-4">
+                  <p className="text-xs text-slate-500">
+                    Sign in with Admin credentials to unlock Add, Edit, and Remove controls across the app.
+                  </p>
+
+                  {adminLoginError && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                      <Icons.AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{adminLoginError}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Admin ID
+                    </label>
+                    <input
+                      type="text"
+                      autoFocus
+                      required
+                      value={adminIdInput}
+                      onChange={(e) => {
+                        setAdminIdInput(e.target.value);
+                        if (adminLoginError) setAdminLoginError('');
+                      }}
+                      placeholder="Enter Admin ID"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showAdminPassword ? 'text' : 'password'}
+                        required
+                        value={adminPasswordInput}
+                        onChange={(e) => {
+                          setAdminPasswordInput(e.target.value);
+                          if (adminLoginError) setAdminLoginError('');
+                        }}
+                        placeholder="Enter Password"
+                        className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminPassword((prev) => !prev)}
+                        className="p-1.5 text-slate-400 hover:text-slate-700 absolute right-2 top-1/2 -translate-y-1/2"
+                        title={showAdminPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showAdminPassword ? (
+                          <Icons.EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Icons.Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setAdminModalOpen(false)}
+                      className="px-4 py-2 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow-xs"
+                    >
+                      Login as Admin
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Reusable Add / Edit / Remove Modal Dialog (Admin Only) */}
+          {isAdmin && crudModal.open && (
+            <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md overflow-hidden">
+                <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <h3 className="font-bold text-slate-900">{crudModal.title}</h3>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCrudModal({
+                        open: false,
+                        mode: 'add',
+                        field: null,
+                        title: '',
+                        placeholder: '',
+                        oldValue: '',
+                        value: '',
+                      })
+                    }
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/70"
+                  >
+                    <Icons.X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCrudSubmit} className="p-5 space-y-4">
+                  {crudModal.mode === 'remove' ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-700">
+                        Are you sure you want to remove{' '}
+                        <strong className="text-rose-700">&ldquo;{crudModal.oldValue}&rdquo;</strong>{' '}
+                        from the dropdown list?
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Existing saved marks history will remain safe in your records.
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                        {crudModal.mode === 'edit'
+                          ? `Rename "${crudModal.oldValue}" to:`
+                          : 'Enter Name'}
+                      </label>
+                      <input
+                        type="text"
+                        autoFocus
+                        value={crudModal.value}
+                        onChange={(e) =>
+                          setCrudModal((prev) => ({ ...prev, value: e.target.value }))
+                        }
+                        placeholder={crudModal.placeholder}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCrudModal({
+                          open: false,
+                          mode: 'add',
+                          field: null,
+                          title: '',
+                          placeholder: '',
+                          oldValue: '',
+                          value: '',
+                        })
+                      }
+                      className="px-4 py-2 rounded-xl border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className={`px-4 py-2 rounded-xl text-white text-sm font-bold shadow-xs ${
+                        crudModal.mode === 'remove'
+                          ? 'bg-rose-600 hover:bg-rose-700'
+                          : 'bg-indigo-600 hover:bg-indigo-700'
+                      }`}
+                    >
+                      {crudModal.mode === 'remove'
+                        ? 'Yes, Remove'
+                        : crudModal.mode === 'edit'
+                        ? 'Save Changes'
+                        : 'Add & Select'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
