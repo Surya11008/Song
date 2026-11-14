@@ -496,6 +496,46 @@
         }
       });
 
+      const [calendarEvents, setCalendarEvents] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.CALENDAR_EVENTS);
+          return saved ? JSON.parse(saved) : [];
+        } catch {
+          return [];
+        }
+      });
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+        } catch (e) {}
+      }, [calendarEvents]);
+
+      // Calendar Tracker View States
+      const [calCurrentDate, setCalCurrentDate] = useState(() => new Date());
+      const [calSelectedDateStr, setCalSelectedDateStr] = useState(() => {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      });
+      const [calViewMode, setCalViewMode] = useState('month'); // 'month' | 'agenda'
+      const [calFilterName, setCalFilterName] = useState('ALL');
+      const [calFilterZion, setCalFilterZion] = useState('ALL');
+      const [calFilterEvaluator, setCalFilterEvaluator] = useState('ALL');
+
+      // Schedule Event Modal State
+      const [calModalOpen, setCalModalOpen] = useState(false);
+      const [calEditingEventId, setCalEditingEventId] = useState(null);
+      const [calEventDate, setCalEventDate] = useState('');
+      const [calEventTitle, setCalEventTitle] = useState('Choir Practice');
+      const [calEventName, setCalEventName] = useState('');
+      const [calEventZion, setCalEventZion] = useState('Nellore');
+      const [calEventBranch, setCalEventBranch] = useState('Main Branch');
+      const [calEventTime, setCalEventTime] = useState('18:00');
+      const [calEventNotes, setCalEventNotes] = useState('');
+
       // Sync to localStorage
       useEffect(() => {
         try {
@@ -1186,6 +1226,230 @@
         return evaluatorsList.filter((ev) => ev.toLowerCase().includes(q));
       }, [evaluatorsList, evaluatorSearch]);
 
+      // Calendar Calculations and Handlers
+      const calMonthYearLabel = useMemo(() => {
+        return calCurrentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }, [calCurrentDate]);
+
+      const calPrevMonth = () => {
+        setCalCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+      };
+
+      const calNextMonth = () => {
+        setCalCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+      };
+
+      const calJumpToday = () => {
+        const today = new Date();
+        setCalCurrentDate(today);
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        setCalSelectedDateStr(`${y}-${m}-${day}`);
+      };
+
+      // Formatted date string helper
+      const formatDisplayDate = (dStr) => {
+        if (!dStr) return '';
+        const parts = dStr.split('-');
+        if (parts.length !== 3) return dStr;
+        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return d.toLocaleDateString('en-US', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+      };
+
+      // Calendar month days calculation
+      const calMonthCells = useMemo(() => {
+        const year = calCurrentDate.getFullYear();
+        const month = calCurrentDate.getMonth();
+        const firstDayOfWeek = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        const cells = [];
+        // Previous month days padding
+        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+          const d = daysInPrevMonth - i;
+          const m = month === 0 ? 12 : month;
+          const y = month === 0 ? year - 1 : year;
+          const dStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          cells.push({ dayNumber: d, dateStr: dStr, isCurrentMonth: false, isToday: dStr === todayStr });
+        }
+        // Current month days
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          cells.push({ dayNumber: d, dateStr: dStr, isCurrentMonth: true, isToday: dStr === todayStr });
+        }
+        // Next month days padding
+        const remaining = (7 - (cells.length % 7)) % 7;
+        for (let d = 1; d <= remaining; d++) {
+          const m = month + 2 > 12 ? 1 : month + 2;
+          const y = month + 2 > 12 ? year + 1 : year;
+          const dStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          cells.push({ dayNumber: d, dateStr: dStr, isCurrentMonth: false, isToday: dStr === todayStr });
+        }
+        return cells;
+      }, [calCurrentDate]);
+
+      // Mapped evaluations by date
+      const calEvaluationsByDate = useMemo(() => {
+        const map = {};
+        evaluations.forEach((item) => {
+          if (calFilterName !== 'ALL' && item.name !== calFilterName) return;
+          if (calFilterZion !== 'ALL' && item.zion !== calFilterZion) return;
+          if (calFilterEvaluator !== 'ALL' && item.evaluator !== calFilterEvaluator) return;
+
+          const dateStr = (item.createdAt || '').slice(0, 10);
+          if (!dateStr) return;
+          if (!map[dateStr]) map[dateStr] = [];
+          map[dateStr].push(item);
+        });
+        return map;
+      }, [evaluations, calFilterName, calFilterZion, calFilterEvaluator]);
+
+      // Mapped events by date
+      const calEventsByDate = useMemo(() => {
+        const map = {};
+        calendarEvents.forEach((ev) => {
+          if (calFilterName !== 'ALL' && ev.name && ev.name !== calFilterName) return;
+          if (calFilterZion !== 'ALL' && ev.zion && ev.zion !== calFilterZion) return;
+
+          const dateStr = ev.date;
+          if (!dateStr) return;
+          if (!map[dateStr]) map[dateStr] = [];
+          map[dateStr].push(ev);
+        });
+        return map;
+      }, [calendarEvents, calFilterName, calFilterZion]);
+
+      // Selected date lists
+      const calSelectedDateEvals = useMemo(() => {
+        return calEvaluationsByDate[calSelectedDateStr] || [];
+      }, [calEvaluationsByDate, calSelectedDateStr]);
+
+      const calSelectedDateEvents = useMemo(() => {
+        return calEventsByDate[calSelectedDateStr] || [];
+      }, [calEventsByDate, calSelectedDateStr]);
+
+      // Month stats
+      const calMonthStats = useMemo(() => {
+        const currentPrefix = `${calCurrentDate.getFullYear()}-${String(calCurrentDate.getMonth() + 1).padStart(2, '0')}`;
+        const evalsThisMonth = evaluations.filter((e) => (e.createdAt || '').startsWith(currentPrefix));
+        const eventsThisMonth = calendarEvents.filter((ev) => (ev.date || '').startsWith(currentPrefix));
+        const avgScore = evalsThisMonth.length > 0
+          ? (evalsThisMonth.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0) / evalsThisMonth.length).toFixed(1)
+          : null;
+        const activeDaysCount = new Set(evalsThisMonth.map((e) => (e.createdAt || '').slice(0, 10))).size;
+
+        return {
+          evalCount: evalsThisMonth.length,
+          eventCount: eventsThisMonth.length,
+          avgScore,
+          activeDaysCount,
+        };
+      }, [evaluations, calendarEvents, calCurrentDate]);
+
+      // Agenda list of all dates with evaluations or events
+      const calAgendaDates = useMemo(() => {
+        const dateSet = new Set([
+          ...Object.keys(calEvaluationsByDate),
+          ...Object.keys(calEventsByDate),
+        ]);
+        return Array.from(dateSet).sort().reverse();
+      }, [calEvaluationsByDate, calEventsByDate]);
+
+      // Schedule Event Handlers
+      const handleOpenAddEventModal = (targetDateStr = null) => {
+        const d = targetDateStr || calSelectedDateStr || new Date().toISOString().slice(0, 10);
+        setCalEditingEventId(null);
+        setCalEventDate(d);
+        setCalEventTitle('Choir Practice');
+        setCalEventName(namesList[0] || '');
+        setCalEventZion(zionsList[0] || 'Nellore');
+        setCalEventBranch(branchesList[0] || 'Main Branch');
+        setCalEventTime('18:00');
+        setCalEventNotes('');
+        setCalModalOpen(true);
+      };
+
+      const handleSaveCalEvent = (e) => {
+        e.preventDefault();
+        if (!calEventDate) {
+          showToast('Please select a date for the event.', 'error');
+          return;
+        }
+        if (!calEventTitle.trim()) {
+          showToast('Please enter an event title.', 'error');
+          return;
+        }
+
+        if (calEditingEventId) {
+          setCalendarEvents((prev) =>
+            prev.map((ev) =>
+              ev.id === calEditingEventId
+                ? {
+                    ...ev,
+                    date: calEventDate,
+                    title: calEventTitle.trim(),
+                    name: calEventName,
+                    zion: calEventZion,
+                    branch: calEventBranch,
+                    time: calEventTime,
+                    notes: calEventNotes.trim(),
+                    updatedAt: new Date().toISOString(),
+                  }
+                : ev
+            )
+          );
+          showToast('Scheduled event updated!');
+        } else {
+          const newEvent = {
+            id: `event_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            date: calEventDate,
+            title: calEventTitle.trim(),
+            name: calEventName,
+            zion: calEventZion,
+            branch: calEventBranch,
+            time: calEventTime,
+            notes: calEventNotes.trim(),
+            completed: false,
+            createdAt: new Date().toISOString(),
+          };
+          setCalendarEvents((prev) => [newEvent, ...prev]);
+          showToast('Choir event scheduled successfully!');
+        }
+
+        setCalModalOpen(false);
+      };
+
+      const handleToggleEventCompleted = (eventId) => {
+        setCalendarEvents((prev) =>
+          prev.map((ev) => (ev.id === eventId ? { ...ev, completed: !ev.completed } : ev))
+        );
+      };
+
+      const handleDeleteCalEvent = (eventId) => {
+        setCalendarEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+        showToast('Event removed from calendar.', 'info');
+      };
+
+      const handleJumpToGrading = (evalEntry) => {
+        setActiveEvaluator(evalEntry.evaluator);
+        setSelectedName(evalEntry.name);
+        setSelectedZion(evalEntry.zion);
+        setSelectedBranch(evalEntry.branch);
+        setSongNumber(evalEntry.songNumber);
+        setActiveView('workspace');
+        showToast(`Switched to grading workspace for ${evalEntry.name} (Song #${evalEntry.songNumber})`);
+      };
+
       return (
         <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
           {/* Top App Header */}
@@ -1294,6 +1558,31 @@
                   {evaluations.length > 0 && (
                     <span className="px-1.5 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-700">
                       {evaluations.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveView('calendar');
+                    try {
+                      if (window.firebaseAnalytics) {
+                        window.firebaseAnalytics.logEvent('view_calendar_tracker');
+                      }
+                    } catch(e) {}
+                  }}
+                  className={`flex-1 md:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                    activeView === 'calendar'
+                      ? 'bg-white text-indigo-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Icons.Calendar className="w-4 h-4" />
+                  <span>4. Calendar Tracker</span>
+                  {(evaluations.length > 0 || calendarEvents.length > 0) && (
+                    <span className="px-1.5 py-0.5 text-[11px] rounded-full bg-emerald-100 text-emerald-700">
+                      {evaluations.length + calendarEvents.length}
                     </span>
                   )}
                 </button>
