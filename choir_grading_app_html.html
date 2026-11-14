@@ -1420,7 +1420,7 @@
           if (calFilterZion !== 'ALL' && item.zion !== calFilterZion) return;
           if (calFilterEvaluator !== 'ALL' && item.evaluator !== calFilterEvaluator) return;
 
-          const dateStr = getLocalDateStr(item.createdAt || item.updatedAt);
+          const dateStr = item.evalDate || getLocalDateStr(item.createdAt || item.updatedAt);
           if (!dateStr) return;
           if (!map[dateStr]) map[dateStr] = [];
           map[dateStr].push(item);
@@ -1455,12 +1455,12 @@
       // Month stats
       const calMonthStats = useMemo(() => {
         const currentPrefix = `${calCurrentDate.getFullYear()}-${String(calCurrentDate.getMonth() + 1).padStart(2, '0')}`;
-        const evalsThisMonth = evaluations.filter((e) => getLocalDateStr(e.createdAt || e.updatedAt).startsWith(currentPrefix));
+        const evalsThisMonth = evaluations.filter((e) => (e.evalDate || getLocalDateStr(e.createdAt || e.updatedAt)).startsWith(currentPrefix));
         const eventsThisMonth = calendarEvents.filter((ev) => (ev.date || '').startsWith(currentPrefix));
         const avgScore = evalsThisMonth.length > 0
           ? (evalsThisMonth.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0) / evalsThisMonth.length).toFixed(1)
           : null;
-        const activeDaysCount = new Set(evalsThisMonth.map((e) => getLocalDateStr(e.createdAt || e.updatedAt))).size;
+        const activeDaysCount = new Set(evalsThisMonth.map((e) => e.evalDate || getLocalDateStr(e.createdAt || e.updatedAt))).size;
 
         return {
           evalCount: evalsThisMonth.length,
@@ -2676,6 +2676,9 @@
                             className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
                           >
                             <div className="flex flex-wrap items-center gap-2">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold text-xs border border-blue-200">
+                                📅 {formatDisplayDate(entry.evalDate || (entry.createdAt ? entry.createdAt.slice(0, 10) : ''))}
+                              </span>
                               <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold text-xs">
                                 Song #{entry.songNumber}
                               </span>
@@ -2730,10 +2733,15 @@
                               className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 flex flex-col justify-between gap-3"
                             >
                               <div className="space-y-1.5">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold text-xs">
-                                    Song #{entry.songNumber}
-                                  </span>
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold text-xs border border-blue-200">
+                                      📅 {formatDisplayDate(entry.evalDate || (entry.createdAt ? entry.createdAt.slice(0, 10) : ''))}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 font-bold text-xs">
+                                      Song #{entry.songNumber}
+                                    </span>
+                                  </div>
                                   <span
                                     className={`px-2 py-0.5 rounded-full text-[11px] font-bold border ${getStatusBadgeStyle(
                                       nameStatusMap[entry.name] || 'Pending'
