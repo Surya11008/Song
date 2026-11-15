@@ -249,6 +249,20 @@
       return 'bg-amber-100 text-amber-800 border-amber-300';
     }
 
+        // Formatted date string helper
+    function formatDisplayDate(dStr) {
+      if (!dStr) return '';
+      const parts = String(dStr).split('-');
+      if (parts.length !== 3) return dStr;
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return d.toLocaleDateString('en-US', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    }
+
     // Storage Keys
     const STORAGE_KEYS = {
       NAMES: 'choir_v2_names',
@@ -1683,19 +1697,7 @@
         setCalSelectedDateStr(`${y}-${m}-${day}`);
       };
 
-      // Formatted date string helper
-      const formatDisplayDate = (dStr) => {
-        if (!dStr) return '';
-        const parts = dStr.split('-');
-        if (parts.length !== 3) return dStr;
-        const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        return d.toLocaleDateString('en-US', {
-          weekday: 'short',
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        });
-      };
+// (formatDisplayDate moved to top-level helper)
 
       // Calendar month days calculation
       const calMonthCells = useMemo(() => {
