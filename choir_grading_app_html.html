@@ -264,6 +264,13 @@
       VAULT_BACKUPS: 'choir_v2_vault_backups',
     };
 
+        function normalizeList(val) {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'object') return Object.values(val);
+      return [];
+    }
+
     // Auto-Recovery Helpers for Persistent Data Protection
     function scanAndRecoverEvaluations() {
       const candidateKeys = [
@@ -610,42 +617,49 @@
         const handleCloudValue = (snapshot) => {
           const val = snapshot.val();
           if (val) {
-            if (Array.isArray(val.evaluations)) {
-              setEvaluations(val.evaluations);
+            const cloudEvals = normalizeList(val.evaluations);
+            if (cloudEvals.length > 0) {
+              setEvaluations(cloudEvals);
               try {
-                localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(val.evaluations));
+                localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(cloudEvals));
               } catch (e) {}
             } else if (evaluations.length > 0 && isInitialCloudLoad.current) {
               window.firebaseDb.ref('song_app/evaluations').set(evaluations).catch(() => {});
             }
 
-            if (Array.isArray(val.names) && val.names.length > 0) {
-              setNamesList(val.names);
-              try { localStorage.setItem(STORAGE_KEYS.NAMES, JSON.stringify(val.names)); } catch(e){}
+            const cloudNames = normalizeList(val.names);
+            if (cloudNames.length > 0) {
+              setNamesList(cloudNames);
+              try { localStorage.setItem(STORAGE_KEYS.NAMES, JSON.stringify(cloudNames)); } catch(e){}
             }
-            if (Array.isArray(val.evaluators) && val.evaluators.length > 0) {
-              setEvaluatorsList(val.evaluators);
-              try { localStorage.setItem(STORAGE_KEYS.EVALUATORS, JSON.stringify(val.evaluators)); } catch(e){}
+            const cloudEvaluators = normalizeList(val.evaluators);
+            if (cloudEvaluators.length > 0) {
+              setEvaluatorsList(cloudEvaluators);
+              try { localStorage.setItem(STORAGE_KEYS.EVALUATORS, JSON.stringify(cloudEvaluators)); } catch(e){}
             }
-            if (Array.isArray(val.zions) && val.zions.length > 0) {
-              setZionsList(val.zions);
-              try { localStorage.setItem(STORAGE_KEYS.ZIONS, JSON.stringify(val.zions)); } catch(e){}
+            const cloudZions = normalizeList(val.zions);
+            if (cloudZions.length > 0) {
+              setZionsList(cloudZions);
+              try { localStorage.setItem(STORAGE_KEYS.ZIONS, JSON.stringify(cloudZions)); } catch(e){}
             }
-            if (Array.isArray(val.branches) && val.branches.length > 0) {
-              setBranchesList(val.branches);
-              try { localStorage.setItem(STORAGE_KEYS.BRANCHES, JSON.stringify(val.branches)); } catch(e){}
+            const cloudBranches = normalizeList(val.branches);
+            if (cloudBranches.length > 0) {
+              setBranchesList(cloudBranches);
+              try { localStorage.setItem(STORAGE_KEYS.BRANCHES, JSON.stringify(cloudBranches)); } catch(e){}
             }
-            if (Array.isArray(val.statuses) && val.statuses.length > 0) {
-              setStatusesList(val.statuses);
-              try { localStorage.setItem(STORAGE_KEYS.STATUSES, JSON.stringify(val.statuses)); } catch(e){}
+            const cloudStatuses = normalizeList(val.statuses);
+            if (cloudStatuses.length > 0) {
+              setStatusesList(cloudStatuses);
+              try { localStorage.setItem(STORAGE_KEYS.STATUSES, JSON.stringify(cloudStatuses)); } catch(e){}
             }
             if (val.name_status_map && typeof val.name_status_map === 'object') {
               setNameStatusMap(val.name_status_map);
               try { localStorage.setItem(STORAGE_KEYS.NAME_STATUS_MAP, JSON.stringify(val.name_status_map)); } catch(e){}
             }
-            if (Array.isArray(val.calendar_events)) {
-              setCalendarEvents(val.calendar_events);
-              try { localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(val.calendar_events)); } catch(e){}
+            const cloudEvents = normalizeList(val.calendar_events);
+            if (cloudEvents.length > 0) {
+              setCalendarEvents(cloudEvents);
+              try { localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(cloudEvents)); } catch(e){}
             }
 
             setCloudSyncStatus('synced');
