@@ -24,11 +24,13 @@
   </script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <script>
     // Web app's Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyB0ZL4r72-G6XCapKvjA-cbOWJbjC9dNuI",
       authDomain: "sni-org-in.firebaseapp.com",
+      databaseURL: "https://sni-org-in-default-rtdb.firebaseio.com",
       projectId: "sni-org-in",
       storageBucket: "sni-org-in.firebasestorage.app",
       messagingSenderId: "717850324141",
@@ -41,8 +43,10 @@
       if (typeof firebase !== 'undefined') {
         const app = firebase.initializeApp(firebaseConfig);
         const analytics = firebase.analytics();
+        const database = firebase.database();
         window.firebaseApp = app;
         window.firebaseAnalytics = analytics;
+        window.firebaseDb = database;
         console.log("Firebase App & Analytics initialized successfully for sni-org-in");
       }
     } catch (e) {
@@ -253,7 +257,52 @@
       ADMIN_SESSION: 'choir_v2_admin_session',
       LAYOUT_MODE: 'choir_v2_layout_mode',
       CALENDAR_EVENTS: 'choir_v2_calendar_events',
+      VAULT_BACKUPS: 'choir_v2_vault_backups',
     };
+
+    // Auto-Recovery Helpers for Persistent Data Protection
+    function scanAndRecoverEvaluations() {
+      const candidateKeys = [
+        'choir_v2_evaluations',
+        'choir_evaluations',
+        'evaluations',
+        'choir_v1_evaluations',
+        'choir_backup_evaluations'
+      ];
+      let found = [];
+      for (const k of candidateKeys) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr) && arr.length > 0) {
+              for (const item of arr) {
+                if (item && item.id && !found.some(x => x.id === item.id)) {
+                  found.push(item);
+                }
+              }
+            }
+          }
+        } catch (e) {}
+      }
+      return found;
+    }
+
+    function saveToVaultHistory(evals) {
+      try {
+        if (!Array.isArray(evals) || evals.length === 0) return;
+        const raw = localStorage.getItem(STORAGE_KEYS.VAULT_BACKUPS);
+        let backups = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(backups)) backups = [];
+        const newEntry = {
+          timestamp: new Date().toISOString(),
+          count: evals.length,
+          data: evals
+        };
+        backups = [newEntry, ...backups.slice(0, 4)];
+        localStorage.setItem(STORAGE_KEYS.VAULT_BACKUPS, JSON.stringify(backups));
+      } catch (e) {}
+    }
 
     // Admin Credentials
     const ADMIN_CREDENTIALS = {
@@ -487,10 +536,18 @@
         }
       });
 
+      // Cloud Sync & Data Vault States
+      const [cloudSyncStatus, setCloudSyncStatus] = useState('syncing'); // 'synced' | 'syncing' | 'offline'
+      const [cloudLastSyncTime, setCloudLastSyncTime] = useState(null);
+      const [isVaultModalOpen, setIsVaultModalOpen] = useState(false);
+      const [vaultJsonInput, setVaultJsonInput] = useState('');
+      const [vaultStatusMsg, setVaultStatusMsg] = useState(null);
+      const isInitialCloudLoad = useRef(true);
+
       const [evaluations, setEvaluations] = useState(() => {
         try {
-          const saved = localStorage.getItem(STORAGE_KEYS.EVALUATIONS);
-          return saved ? JSON.parse(saved) : [];
+          const recovered = scanAndRecoverEvaluations();
+          return recovered;
         } catch {
           return [];
         }
@@ -536,48 +593,172 @@
       const [calEventTime, setCalEventTime] = useState('18:00');
       const [calEventNotes, setCalEventNotes] = useState('');
 
-      // Sync to localStorage
+      // Firebase Realtime Database 2-Way Sync
+      useEffect(() => {
+        if (!window.firebaseDb) {
+          setCloudSyncStatus('offline');
+          return;
+        }
+
+        const rootRef = window.firebaseDb.ref('song_app');
+        setCloudSyncStatus('syncing');
+
+        const handleCloudValue = (snapshot) => {
+          const val = snapshot.val();
+          if (val) {
+            if (Array.isArray(val.evaluations)) {
+              setEvaluations(val.evaluations);
+              try {
+                localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(val.evaluations));
+              } catch (e) {}
+            } else if (evaluations.length > 0 && isInitialCloudLoad.current) {
+              window.firebaseDb.ref('song_app/evaluations').set(evaluations).catch(() => {});
+            }
+
+            if (Array.isArray(val.names) && val.names.length > 0) {
+              setNamesList(val.names);
+              try { localStorage.setItem(STORAGE_KEYS.NAMES, JSON.stringify(val.names)); } catch(e){}
+            }
+            if (Array.isArray(val.evaluators) && val.evaluators.length > 0) {
+              setEvaluatorsList(val.evaluators);
+              try { localStorage.setItem(STORAGE_KEYS.EVALUATORS, JSON.stringify(val.evaluators)); } catch(e){}
+            }
+            if (Array.isArray(val.zions) && val.zions.length > 0) {
+              setZionsList(val.zions);
+              try { localStorage.setItem(STORAGE_KEYS.ZIONS, JSON.stringify(val.zions)); } catch(e){}
+            }
+            if (Array.isArray(val.branches) && val.branches.length > 0) {
+              setBranchesList(val.branches);
+              try { localStorage.setItem(STORAGE_KEYS.BRANCHES, JSON.stringify(val.branches)); } catch(e){}
+            }
+            if (Array.isArray(val.statuses) && val.statuses.length > 0) {
+              setStatusesList(val.statuses);
+              try { localStorage.setItem(STORAGE_KEYS.STATUSES, JSON.stringify(val.statuses)); } catch(e){}
+            }
+            if (val.name_status_map && typeof val.name_status_map === 'object') {
+              setNameStatusMap(val.name_status_map);
+              try { localStorage.setItem(STORAGE_KEYS.NAME_STATUS_MAP, JSON.stringify(val.name_status_map)); } catch(e){}
+            }
+            if (Array.isArray(val.calendar_events)) {
+              setCalendarEvents(val.calendar_events);
+              try { localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(val.calendar_events)); } catch(e){}
+            }
+
+            setCloudSyncStatus('synced');
+            setCloudLastSyncTime(new Date());
+            isInitialCloudLoad.current = false;
+          } else {
+            pushAllToCloud();
+            setCloudSyncStatus('synced');
+            setCloudLastSyncTime(new Date());
+            isInitialCloudLoad.current = false;
+          }
+        };
+
+        rootRef.on('value', handleCloudValue, (err) => {
+          console.warn('Firebase Realtime Database listener warning:', err);
+          setCloudSyncStatus('offline');
+        });
+
+        return () => {
+          try { rootRef.off('value', handleCloudValue); } catch(e){}
+        };
+      }, []);
+
+      const pushAllToCloud = () => {
+        if (!window.firebaseDb) return;
+        setCloudSyncStatus('syncing');
+        window.firebaseDb.ref('song_app').update({
+          evaluations: evaluations,
+          names: namesList,
+          evaluators: evaluatorsList,
+          zions: zionsList,
+          branches: branchesList,
+          statuses: statusesList,
+          name_status_map: nameStatusMap,
+          calendar_events: calendarEvents,
+          lastUpdated: new Date().toISOString()
+        }).then(() => {
+          setCloudSyncStatus('synced');
+          setCloudLastSyncTime(new Date());
+        }).catch(() => {
+          setCloudSyncStatus('offline');
+        });
+      };
+
+      // Sync state to localStorage & Firebase
       useEffect(() => {
         try {
           localStorage.setItem(STORAGE_KEYS.EVALUATORS, JSON.stringify(evaluatorsList));
         } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/evaluators').set(evaluatorsList).catch(() => {});
+        }
       }, [evaluatorsList]);
 
       useEffect(() => {
         try {
           localStorage.setItem(STORAGE_KEYS.NAMES, JSON.stringify(namesList));
         } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/names').set(namesList).catch(() => {});
+        }
       }, [namesList]);
 
       useEffect(() => {
         try {
           localStorage.setItem(STORAGE_KEYS.ZIONS, JSON.stringify(zionsList));
         } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/zions').set(zionsList).catch(() => {});
+        }
       }, [zionsList]);
 
       useEffect(() => {
         try {
           localStorage.setItem(STORAGE_KEYS.BRANCHES, JSON.stringify(branchesList));
         } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/branches').set(branchesList).catch(() => {});
+        }
       }, [branchesList]);
 
       useEffect(() => {
         try {
           localStorage.setItem(STORAGE_KEYS.STATUSES, JSON.stringify(statusesList));
         } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/statuses').set(statusesList).catch(() => {});
+        }
       }, [statusesList]);
 
       useEffect(() => {
         try {
           localStorage.setItem(STORAGE_KEYS.NAME_STATUS_MAP, JSON.stringify(nameStatusMap));
         } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/name_status_map').set(nameStatusMap).catch(() => {});
+        }
       }, [nameStatusMap]);
 
       useEffect(() => {
         try {
           localStorage.setItem(STORAGE_KEYS.EVALUATIONS, JSON.stringify(evaluations));
+          saveToVaultHistory(evaluations);
         } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/evaluations').set(evaluations).catch(() => {});
+        }
       }, [evaluations]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEYS.CALENDAR_EVENTS, JSON.stringify(calendarEvents));
+        } catch (e) {}
+        if (!isInitialCloudLoad.current && window.firebaseDb) {
+          window.firebaseDb.ref('song_app/calendar_events').set(calendarEvents).catch(() => {});
+        }
+      }, [calendarEvents]);
 
       // Form State
       const [songNumber, setSongNumber] = useState(1);
@@ -711,6 +892,128 @@
           sessionStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
         } catch (err) {}
         showToast('Logged out of Admin mode.', 'info');
+      };
+
+      // Data Vault & Cloud Sync Handlers
+      const handleExportVaultJson = () => {
+        const payload = {
+          app: 'Choir Grading - 100 Marks',
+          domain: 'song.sni.org.in',
+          exportedAt: new Date().toISOString(),
+          evaluations: evaluations,
+          names: namesList,
+          evaluators: evaluatorsList,
+          zions: zionsList,
+          branches: branchesList,
+          statuses: statusesList,
+          name_status_map: nameStatusMap,
+          calendar_events: calendarEvents,
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const dateStr = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `choir_grading_sni_backup_${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Vault backup file downloaded successfully!', 'success');
+      };
+
+      const handleImportVaultJson = (mode = 'merge') => {
+        if (!vaultJsonInput.trim()) {
+          setVaultStatusMsg({ type: 'error', text: 'Please paste backup JSON data or select a file.' });
+          return;
+        }
+        try {
+          const parsed = JSON.parse(vaultJsonInput.trim());
+          let importedEvals = [];
+          if (Array.isArray(parsed)) {
+            importedEvals = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.evaluations)) importedEvals = parsed.evaluations;
+            if (Array.isArray(parsed.names) && parsed.names.length > 0) setNamesList(parsed.names);
+            if (Array.isArray(parsed.evaluators) && parsed.evaluators.length > 0) setEvaluatorsList(parsed.evaluators);
+            if (Array.isArray(parsed.zions) && parsed.zions.length > 0) setZionsList(parsed.zions);
+            if (Array.isArray(parsed.branches) && parsed.branches.length > 0) setBranchesList(parsed.branches);
+            if (Array.isArray(parsed.statuses) && parsed.statuses.length > 0) setStatusesList(parsed.statuses);
+            if (parsed.name_status_map && typeof parsed.name_status_map === 'object') setNameStatusMap(parsed.name_status_map);
+            if (Array.isArray(parsed.calendar_events)) setCalendarEvents(parsed.calendar_events);
+          }
+
+          if (importedEvals.length === 0 && (!parsed || !parsed.names)) {
+            setVaultStatusMsg({ type: 'error', text: 'No valid evaluation records found in the pasted JSON.' });
+            return;
+          }
+
+          if (mode === 'merge') {
+            setEvaluations((prev) => {
+              const merged = [...prev];
+              for (const item of importedEvals) {
+                if (item && item.id && !merged.some(x => x.id === item.id)) {
+                  merged.push(item);
+                }
+              }
+              return merged;
+            });
+            setVaultStatusMsg({ type: 'success', text: `Merged ${importedEvals.length} records into dataset.` });
+          } else {
+            setEvaluations(importedEvals);
+            setVaultStatusMsg({ type: 'success', text: `Replaced with ${importedEvals.length} records from backup.` });
+          }
+
+          setTimeout(() => pushAllToCloud(), 100);
+          showToast('Data restored and synced to Firebase cloud!', 'success');
+          setVaultJsonInput('');
+        } catch (err) {
+          setVaultStatusMsg({ type: 'error', text: 'Invalid JSON format: ' + err.message });
+        }
+      };
+
+      const handleFileUpload = (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          setVaultJsonInput(evt.target.result);
+          setVaultStatusMsg({ type: 'info', text: `File "${file.name}" loaded (${(file.size / 1024).toFixed(1)} KB). Choose Merge or Replace below.` });
+        };
+        reader.readAsText(file);
+      };
+
+      const handleAutoRecoverLostData = () => {
+        const recovered = scanAndRecoverEvaluations();
+        if (recovered.length === 0) {
+          setVaultStatusMsg({ type: 'info', text: 'No archived data found in other browser keys.' });
+          showToast('No archived data found in browser cache.', 'info');
+          return;
+        }
+        let addedCount = 0;
+        setEvaluations((prev) => {
+          const merged = [...prev];
+          for (const item of recovered) {
+            if (item && item.id && !merged.some(x => x.id === item.id)) {
+              merged.push(item);
+              addedCount++;
+            }
+          }
+          return merged;
+        });
+        setTimeout(() => pushAllToCloud(), 100);
+        const msg = addedCount > 0 
+          ? `Found and recovered ${addedCount} evaluations from browser cache!`
+          : `All ${recovered.length} cached evaluations are already active in your app.`;
+        setVaultStatusMsg({ type: 'success', text: msg });
+        showToast(msg, 'success');
+      };
+
+      const handleRestoreVaultSnapshot = (snapshotData) => {
+        if (!Array.isArray(snapshotData)) return;
+        setEvaluations(snapshotData);
+        setTimeout(() => pushAllToCloud(), 100);
+        showToast(`Restored snapshot with ${snapshotData.length} records!`, 'success');
       };
 
       // Handle CRUD Submit
@@ -1589,6 +1892,27 @@
 
                 {/* Global View Toggle & Admin Login */}
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Cloud Sync & Vault Status Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsVaultModalOpen(true)}
+                    title="Firebase Cloud Database & Data Vault Backup"
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition border shadow-xs ${
+                      cloudSyncStatus === 'synced'
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                        : cloudSyncStatus === 'syncing'
+                        ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 animate-pulse'
+                        : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${
+                      cloudSyncStatus === 'synced' ? 'bg-emerald-500' :
+                      cloudSyncStatus === 'syncing' ? 'bg-amber-500' : 'bg-slate-400'
+                    }`}></span>
+                    <span>{cloudSyncStatus === 'synced' ? 'Cloud Synced' : cloudSyncStatus === 'syncing' ? 'Syncing...' : 'Offline Safe'}</span>
+                    <span className="text-[10px] text-slate-400 border-l border-slate-300 pl-1.5 ml-0.5">Vault</span>
+                  </button>
+
                   <ViewModeToggle
                     mode={layoutMode}
                     onChange={handleGlobalLayoutChange}
@@ -4309,6 +4633,243 @@
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Data Vault & Cloud Sync Modal */}
+          {isVaultModalOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl overflow-hidden my-6">
+                {/* Header */}
+                <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                      <Icons.Shield className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-base leading-tight">Firebase Cloud Database &amp; Data Vault</h3>
+                      <p className="text-xs text-slate-300">Permanent Real-Time Protection • sni-org-in</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsVaultModalOpen(false);
+                      setVaultStatusMsg(null);
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10"
+                  >
+                    <Icons.X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-5 max-h-[80vh] overflow-y-auto">
+                  {/* Status Banner */}
+                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${
+                          cloudSyncStatus === 'synced' ? 'bg-emerald-500 ring-4 ring-emerald-100' :
+                          cloudSyncStatus === 'syncing' ? 'bg-amber-500 ring-4 ring-amber-100 animate-pulse' : 'bg-slate-400'
+                        }`}></span>
+                        <span className="text-xs font-bold text-slate-800">
+                          {cloudSyncStatus === 'synced' ? 'Live Cloud Connected & Synced' :
+                           cloudSyncStatus === 'syncing' ? 'Syncing to Google Cloud...' : 'Offline Mode (Local Storage Safe)'}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {cloudLastSyncTime ? `Last sync: ${cloudLastSyncTime.toLocaleTimeString()}` : 'Database: sni-org-in'}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600">
+                      Your evaluations and team data are permanently preserved in Google Firebase Realtime Database (<code className="bg-slate-200/80 px-1 py-0.5 rounded text-[11px]">sni-org-in-default-rtdb</code>). Data will never be lost on reload or device switch.
+                    </p>
+
+                    {/* Stat Tiles */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-center">
+                        <div className="text-xs text-slate-500">Evaluations</div>
+                        <div className="text-base font-black text-indigo-600">{evaluations.length}</div>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-center">
+                        <div className="text-xs text-slate-500">Choir Teams</div>
+                        <div className="text-base font-black text-slate-800">{namesList.length}</div>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-center">
+                        <div className="text-xs text-slate-500">Evaluators</div>
+                        <div className="text-base font-black text-slate-800">{evaluatorsList.length}</div>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-center">
+                        <div className="text-xs text-slate-500">Calendar Events</div>
+                        <div className="text-base font-black text-purple-600">{calendarEvents.length}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Feedback Message */}
+                  {vaultStatusMsg && (
+                    <div className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-2 ${
+                      vaultStatusMsg.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                      vaultStatusMsg.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' :
+                      'bg-indigo-50 border-indigo-200 text-indigo-800'
+                    }`}>
+                      <span>{vaultStatusMsg.text}</span>
+                      <button
+                        type="button"
+                        onClick={() => setVaultStatusMsg(null)}
+                        className="text-slate-400 hover:text-slate-600"
+                      >
+                        <Icons.X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Quick Action Buttons */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Cloud &amp; Backup Operations
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          pushAllToCloud();
+                          showToast('Forced full sync to Firebase Cloud!', 'success');
+                        }}
+                        className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition shadow-xs"
+                      >
+                        <Icons.RefreshCw className="w-3.5 h-3.5" />
+                        <span>Force Cloud Sync</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleExportVaultJson}
+                        className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-xs"
+                      >
+                        <Icons.Download className="w-3.5 h-3.5" />
+                        <span>Download JSON Backup</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleAutoRecoverLostData}
+                        className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-xs"
+                        title="Scan all browser cache keys to recover previous evaluations"
+                      >
+                        <Icons.Database className="w-3.5 h-3.5" />
+                        <span>Recover Browser Cache</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Manual Restore / Import */}
+                  <div className="space-y-3 pt-2 border-t border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Import / Restore Backup Data
+                      </label>
+                      <label className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-bold cursor-pointer">
+                        <Icons.Upload className="w-3 h-3" />
+                        <span>Load Backup File (.json)</span>
+                        <input
+                          type="file"
+                          accept=".json,application/json"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    <textarea
+                      rows="3"
+                      value={vaultJsonInput}
+                      onChange={(e) => setVaultJsonInput(e.target.value)}
+                      placeholder='Paste JSON backup data here or load a .json file...'
+                      className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
+                    ></textarea>
+
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleImportVaultJson('merge')}
+                        className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs"
+                      >
+                        Merge with Existing Data (Safe)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Are you sure you want to replace all current evaluations and configuration with this backup?')) {
+                            handleImportVaultJson('overwrite');
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 text-xs font-bold transition"
+                      >
+                        Full Overwrite
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Historical Local Snapshots */}
+                  {(() => {
+                    let snapshots = [];
+                    try {
+                      const raw = localStorage.getItem(STORAGE_KEYS.VAULT_BACKUPS);
+                      if (raw) snapshots = JSON.parse(raw);
+                    } catch(e) {}
+
+                    if (!Array.isArray(snapshots) || snapshots.length === 0) return null;
+
+                    return (
+                      <div className="space-y-2 pt-2 border-t border-slate-200">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                          Automatic Browser Snapshots ({snapshots.length})
+                        </label>
+                        <div className="space-y-1.5">
+                          {snapshots.map((snap, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Icons.Clock className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="font-semibold text-slate-800">
+                                  {new Date(snap.timestamp).toLocaleString()}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">
+                                  {snap.count} records
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRestoreVaultSnapshot(snap.data)}
+                                className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold transition"
+                              >
+                                Restore
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsVaultModalOpen(false);
+                      setVaultStatusMsg(null);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition"
+                  >
+                    Close Vault
+                  </button>
+                </div>
               </div>
             </div>
           )}
