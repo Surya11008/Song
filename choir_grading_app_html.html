@@ -1273,6 +1273,10 @@
           showToast('Please select an Evaluator first.', 'error');
           return;
         }
+        if (!selectedName || !selectedName.trim()) {
+          showToast('Please select or add a Name (Person/Group/Team).', 'error');
+          return;
+        }
         if (!selectedZion) {
           showToast('Please select or add a Zion.', 'error');
           return;
@@ -1290,6 +1294,7 @@
             item.id === editingEvalId
               ? {
                   ...item,
+                  name: selectedName,
                   zion: selectedZion,
                   branch: selectedBranch,
                   evaluator: activeEvaluator,
@@ -1302,11 +1307,12 @@
               : item
           );
           setEvaluations(updatedList);
-          showToast(`Updated marks for ${selectedZion} (${selectedBranch}) to ${totalMarks}/100!`);
+          showToast(`Updated marks for ${selectedName} to ${totalMarks}/100!`);
           setEditingEvalId(null);
         } else {
           const newEntry = {
             id: `eval_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            name: selectedName,
             zion: selectedZion,
             branch: selectedBranch,
             evaluator: activeEvaluator,
@@ -1318,7 +1324,7 @@
           };
           updatedList = [newEntry, ...evaluations];
           setEvaluations(updatedList);
-          showToast(`Saved ${totalMarks}/100 for ${selectedZion} (${selectedBranch})!`);
+          showToast(`Saved ${totalMarks}/100 for ${selectedName}!`);
         }
 
         if (window.firebaseDb) {
@@ -1334,6 +1340,7 @@
           return;
         }
         setActiveEvaluator(entry.evaluator);
+        if (entry.name) setSelectedName(entry.name);
         if (entry.zion) setSelectedZion(entry.zion);
         if (entry.branch) setSelectedBranch(entry.branch);
         if (entry.evalDate) setEvalDate(entry.evalDate);
@@ -1341,7 +1348,7 @@
         setEditingEvalId(entry.id);
         setActiveView('workspace');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast(`Editing evaluation for ${entry.zion || 'Zion'} (${entry.branch || 'Branch'})`);
+        showToast(`Editing evaluation for ${entry.name || 'Entry'}`);
       };
 
       const handleDeleteEvaluation = (id) => {
@@ -1434,9 +1441,11 @@
 
           let key;
           if (resultsGroupBy === 'song_date') {
-            key = `${ev.name}__Song_${ev.songNumber}__Date_${dStr}`;
+            key = ev.songNumber
+              ? `${ev.name}__Song_${ev.songNumber}__Date_${dStr}`
+              : `${ev.name}__Date_${dStr}`;
           } else if (resultsGroupBy === 'song') {
-            key = `${ev.name}__Song_${ev.songNumber}`;
+            key = ev.songNumber ? `${ev.name}__Song_${ev.songNumber}` : `name__${ev.name}`;
           } else {
             key = `team__${ev.name}`;
           }
@@ -1998,7 +2007,7 @@
                   }`}
                 >
                   <Icons.BarChart3 className="w-4 h-4" />
-                  <span>3. Scores &amp; Avg</span>
+                  <span>3. Names &amp; Avg</span>
                   {evaluations.length > 0 && (
                     <span className="px-1.5 py-0.5 text-[11px] rounded-full bg-indigo-100 text-indigo-700">
                       {evaluations.length}
@@ -2152,7 +2161,7 @@
                         (e) => e.evaluator === evName
                       );
                       const ratedNamesCount = new Set(
-                        evSubmissions.map((e) => `${e.zion || ''}-${e.branch || ''}`)
+                        evSubmissions.map((e) => e.name || `${e.zion || ''}-${e.branch || ''}`)
                       ).size;
                       const avgGiven =
                         evSubmissions.length > 0
@@ -2435,7 +2444,7 @@
                     <div className="flex items-center gap-2 text-amber-900 text-sm font-medium">
                       <Icons.Edit3 className="w-4 h-4 text-amber-600 shrink-0" />
                       <span>
-                        Editing existing entry for <strong>{selectedName}</strong> (Song #{songNumber})
+                        Editing existing entry for <strong>{selectedName}</strong> ({selectedZion} - {selectedBranch})
                       </span>
                     </div>
                     <button
@@ -2451,21 +2460,46 @@
                   </div>
                 )}
 
-                {/* Zion, Branch & Evaluation Date */}
+                {/* Name, Zion, Branch & Evaluation Date */}
                 <section className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-5 space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                     <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                       <Icons.Sparkles className="w-4 h-4 text-indigo-600" />
-                      <span>Zion, Branch &amp; Evaluation Date</span>
+                      <span>Name, Zion, Branch &amp; Evaluation Date</span>
                     </h3>
                     <span className="text-xs text-slate-400">
                       {isAdmin
                         ? 'Admin Mode: Add, Edit & Remove enabled'
-                        : 'Select Date, Zion & Branch'}
+                        : 'Select Name, Date, Zion & Branch'}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <ManageableSelect
+                      label="Name (Person / Group / Team)"
+                      icon={Icons.Users}
+                      value={selectedName}
+                      onChange={setSelectedName}
+                      options={namesList}
+                      placeholder="-- Select Name / Team --"
+                      isAdmin={isAdmin}
+                      onAdd={() =>
+                        openCrudModal(
+                          'add',
+                          'name',
+                          'Name (Person / Group / Team)',
+                          '',
+                          'e.g., Gospel Choir / Team B / Ravi'
+                        )
+                      }
+                      onEdit={() =>
+                        openCrudModal('edit', 'name', 'Name (Person / Group / Team)', selectedName)
+                      }
+                      onRemove={() =>
+                        openCrudModal('remove', 'name', 'Name (Person / Group / Team)', selectedName)
+                      }
+                    />
+
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
@@ -3114,9 +3148,9 @@
                               ? 'bg-white text-indigo-700 shadow-xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
-                          title="Separate calculation per Date and Zion"
+                          title="Separate calculation per Name and Date"
                         >
-                          Per Date &amp; Zion (Default)
+                          Per Name &amp; Date (Default)
                         </button>
                         <button
                           type="button"
@@ -3126,9 +3160,9 @@
                               ? 'bg-white text-indigo-700 shadow-xs'
                               : 'text-slate-600 hover:text-slate-900'
                           }`}
-                          title="Overall calculation per Zion &amp; Branch across all dates"
+                          title="Overall calculation per Name across all dates"
                         >
-                          Per Zion &amp; Branch Overall
+                          Per Name Overall
                         </button>
                         <button
                           type="button"
@@ -3164,7 +3198,23 @@
                         ))}
                       </select>
                     </div>
-                    {/* (Name / Team filter removed) */}
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                        Filter Name
+                      </label>
+                      <select
+                        value={filterName}
+                        onChange={(e) => setFilterName(e.target.value)}
+                        className="w-full px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold"
+                      >
+                        <option value="ALL">All Names</option>
+                        {namesList.map((n) => (
+                          <option key={n} value={n}>
+                            {n}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
                     <div>
                       <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
